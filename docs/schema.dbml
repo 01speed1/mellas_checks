@@ -1,0 +1,120 @@
+Project mellas_checks {
+  database_type: 'SQLite'
+  Note: 'Simplified implemented schema (versions implicit, dynamic locking)'
+}
+
+Table child {
+  id integer [pk, increment]
+  name text [not null, unique]
+  created_at text [not null]
+  updated_at text [not null]
+  Indexes { (name) [unique] }
+}
+
+Table subject {
+  id integer [pk, increment]
+  name text [not null, unique]
+  created_at text [not null]
+  updated_at text [not null]
+  Indexes { (name) [unique] }
+}
+
+Table material {
+  id integer [pk, increment]
+  name text [not null, unique]
+  created_at text [not null]
+  updated_at text [not null]
+  Indexes { (name) [unique] }
+}
+
+Table subject_material {
+  subject_id integer [not null, ref: > subject.id]
+  material_id integer [not null, ref: > material.id]
+  primary key (subject_id, material_id)
+}
+
+Table schedule_template {
+  id integer [pk, increment]
+  name text [not null, unique]
+  created_at text [not null]
+  updated_at text [not null]
+  Indexes { (name) [unique] }
+}
+
+Table schedule_version {
+  id integer [pk, increment]
+  template_id integer [not null, ref: > schedule_template.id]
+  valid_from text [not null]
+  created_at text [not null]
+  updated_at text [not null]
+  Indexes { (valid_from) }
+}
+
+Table schedule_block {
+  id integer [pk, increment]
+  version_id integer [not null, ref: > schedule_version.id]
+  block_order integer [not null]
+  subject_id integer [not null, ref: > subject.id]
+  created_at text [not null]
+  updated_at text [not null]
+  Indexes { (version_id, block_order) [unique] }
+}
+
+Table checklist_instance {
+  id integer [pk, increment]
+  child_id integer [not null, ref: > child.id]
+  target_date text [not null]
+  schedule_version_id integer [not null, ref: > schedule_version.id]
+  created_at text [not null]
+  updated_at text [not null]
+  Indexes { (child_id, target_date) [unique] (target_date) }
+}
+
+Table checklist_item_state {
+  id integer [pk, increment]
+  checklist_instance_id integer [not null, ref: > checklist_instance.id]
+  subject_id integer [not null, ref: > subject.id]
+  material_id integer [not null, ref: > material.id]
+  checked boolean [not null, default: false]
+  checked_at text
+  created_at text [not null]
+  updated_at text [not null]
+  Indexes { (checklist_instance_id, subject_id, material_id) [unique] }
+}
+
+Note: UI renders checklist_item_state grouped by subject with each material shown as nested sub-checklist entry; no additional schema required for this presentation.
+
+Table audit_event {
+  id integer [pk, increment]
+  event_type text [not null]
+  child_id integer [ref: > child.id]
+  checklist_instance_id integer [ref: > checklist_instance.id]
+  payload_json text
+  created_at text [not null]
+  Indexes { (event_type) (created_at) }
+}
+
+Table subject_requirement {
+  id integer [pk, increment]
+  subject_id integer [not null, ref: > subject.id]
+  description text [not null]
+  target_date text
+  is_recurring boolean [not null, default: false]
+  resolved_at text
+  created_at text [not null]
+  Indexes { (subject_id) (target_date) (is_recurring) }
+}
+
+Ref: schedule_version.template_id > schedule_template.id
+Ref: schedule_block.version_id > schedule_version.id
+Ref: schedule_block.subject_id > subject.id
+Ref: subject_material.subject_id > subject.id
+Ref: subject_material.material_id > material.id
+Ref: checklist_instance.child_id > child.id
+Ref: checklist_instance.schedule_version_id > schedule_version.id
+Ref: checklist_item_state.checklist_instance_id > checklist_instance.id
+Ref: checklist_item_state.subject_id > subject.id
+Ref: checklist_item_state.material_id > material.id
+Ref: audit_event.child_id > child.id
+Ref: audit_event.checklist_instance_id > checklist_instance.id
+Ref: subject_requirement.subject_id > subject.id
