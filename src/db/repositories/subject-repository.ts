@@ -1,5 +1,5 @@
-import { and, eq } from 'drizzle-orm';
-import { subject, subjectMaterial, material } from '../../db/schema';
+import { eq } from 'drizzle-orm';
+import { subject } from '../../db/schema';
 import { getDbClient } from '../../db/client';
 
 export interface CreateSubjectInput {
@@ -32,26 +32,4 @@ export async function deleteSubject(subjectId: number) {
   await db.delete(subject).where(eq(subject.id, subjectId));
 }
 
-export async function attachMaterialToSubject(subjectId: number, materialId: number) {
-  const db = getDbClient();
-  await db.insert(subjectMaterial).values({ subjectId, materialId }).onConflictDoNothing();
-}
-
-export async function detachMaterialFromSubject(subjectId: number, materialId: number) {
-  const db = getDbClient();
-  await db
-    .delete(subjectMaterial)
-    .where(
-      and(eq(subjectMaterial.subjectId, subjectId), eq(subjectMaterial.materialId, materialId))
-    );
-}
-
-export async function listSubjectMaterials(subjectId: number) {
-  const db = getDbClient();
-  return db
-    .select({ materialId: material.id, materialName: material.name })
-    .from(subjectMaterial)
-    .innerJoin(material, eq(material.id, subjectMaterial.materialId))
-    .where(eq(subjectMaterial.subjectId, subjectId))
-    .orderBy(material.name);
-}
+// Subject-level material linking removed; template-specific linking lives in template-material-repository.

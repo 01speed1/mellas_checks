@@ -6,10 +6,12 @@ import {
   createSubject,
   renameSubject,
   deleteSubject,
-  listSubjectMaterials,
-  attachMaterialToSubject,
-  detachMaterialFromSubject,
 } from '../../../db/repositories/subject-repository';
+import {
+  listTemplateSubjectMaterials,
+  attachMaterialToTemplateSubject,
+  detachMaterialFromTemplateSubject,
+} from '../../../db/repositories/template-material-repository';
 import {
   listMaterials,
   createMaterial,
@@ -66,7 +68,7 @@ export function AdminStructureManager(
         const subjectIds = Array.from(new Set((blockRows as any).map((b: any) => b.subjectId)));
         const mapping: Record<number, Array<{ materialId: number; materialName: string }>> = {};
         for (const sid of subjectIds) {
-          const mats = await listSubjectMaterials(Number(sid));
+          const mats = await listTemplateSubjectMaterials(template.id, Number(sid));
           mapping[Number(sid)] = mats as any;
         }
         setMaterialsBySubject(mapping);
@@ -168,10 +170,12 @@ export function AdminStructureManager(
       [subjectId]: [...existing, { materialId, materialName: matName }],
     });
     try {
-      await attachMaterialToSubject(subjectId, materialId);
+      if (template) await attachMaterialToTemplateSubject(template.id, subjectId, materialId);
     } finally {
-      const mats = await listSubjectMaterials(subjectId);
-      setMaterialsBySubject({ ...materialsBySubject, [subjectId]: mats as any });
+      if (template) {
+        const mats = await listTemplateSubjectMaterials(template.id, subjectId);
+        setMaterialsBySubject({ ...materialsBySubject, [subjectId]: mats as any });
+      }
     }
   }
   async function onDetach(subjectId: number, materialId: number) {
@@ -181,10 +185,12 @@ export function AdminStructureManager(
       [subjectId]: existing.filter((m) => m.materialId !== materialId),
     });
     try {
-      await detachMaterialFromSubject(subjectId, materialId);
+      if (template) await detachMaterialFromTemplateSubject(template.id, subjectId, materialId);
     } finally {
-      const mats = await listSubjectMaterials(subjectId);
-      setMaterialsBySubject({ ...materialsBySubject, [subjectId]: mats as any });
+      if (template) {
+        const mats = await listTemplateSubjectMaterials(template.id, subjectId);
+        setMaterialsBySubject({ ...materialsBySubject, [subjectId]: mats as any });
+      }
     }
   }
   async function onAddBlock(subjectId: number) {

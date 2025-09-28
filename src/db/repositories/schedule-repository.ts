@@ -4,6 +4,7 @@ import { getDbClient } from '../../db/client';
 
 export interface CreateScheduleTemplateInput {
   name: string;
+  childId: number;
 }
 
 export async function createScheduleTemplate(input: CreateScheduleTemplateInput) {
@@ -11,15 +12,25 @@ export async function createScheduleTemplate(input: CreateScheduleTemplateInput)
   const existing = await db
     .select()
     .from(scheduleTemplate)
-    .where(eq(scheduleTemplate.name, input.name))
+    .where(and(eq(scheduleTemplate.childId, input.childId), eq(scheduleTemplate.name, input.name)))
     .limit(1);
   if (existing[0]) return existing[0];
-  const [inserted] = await db.insert(scheduleTemplate).values({ name: input.name }).returning();
+  const [inserted] = await db
+    .insert(scheduleTemplate)
+    .values({ name: input.name, childId: input.childId })
+    .returning();
   return inserted;
 }
 
-export async function listScheduleTemplates() {
+export async function listScheduleTemplates(childId?: number) {
   const db = getDbClient();
+  if (typeof childId === 'number') {
+    return db
+      .select()
+      .from(scheduleTemplate)
+      .where(eq(scheduleTemplate.childId, childId))
+      .orderBy(scheduleTemplate.name);
+  }
   return db.select().from(scheduleTemplate).orderBy(scheduleTemplate.name);
 }
 

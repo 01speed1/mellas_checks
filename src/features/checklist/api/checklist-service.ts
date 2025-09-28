@@ -2,7 +2,7 @@ import {
   listBlocksForVersion,
   ensureEditableVersion,
 } from '../../../db/repositories/schedule-repository';
-import { listSubjectMaterials } from '../../../db/repositories/subject-repository';
+import { listMaterialsForTemplate } from '../../../db/repositories/template-material-repository';
 import { getDbClient } from '../../../db/client';
 import { checklistInstance, checklistItemState, scheduleTemplate } from '../../../db/schema';
 import { and, eq } from 'drizzle-orm';
@@ -124,13 +124,17 @@ export async function getDbChecklist(params: GetChecklistParams): Promise<{
   const lockedNowRecalc = lockedNow;
   const blocks = await listBlocksForVersion(versionId);
   const subjectIds = blocks.map((b: any) => b.subjectId);
+  const materialsForTemplate = await listMaterialsForTemplate(params.templateId);
   const materialsBySubject: Record<
     number,
     Array<{ materialId: number; materialName: string }>
   > = {};
-  for (const sid of subjectIds) {
-    const mats = await listSubjectMaterials(sid);
-    materialsBySubject[sid] = mats as any;
+  for (const row of materialsForTemplate) {
+    if (!materialsBySubject[row.subjectId]) materialsBySubject[row.subjectId] = [];
+    materialsBySubject[row.subjectId].push({
+      materialId: row.materialId,
+      materialName: row.materialName,
+    });
   }
   const states = await db
     .select()

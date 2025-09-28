@@ -4,10 +4,7 @@ import { getDbClient } from '../../../db/client';
 import { checklistItemState } from '../../../db/schema';
 import { and, eq } from 'drizzle-orm';
 import { determineChecklistPhase } from '../../../lib/time-window';
-import {
-  ensureScheduleVersionForDate,
-  getOrCreateChecklistInstance,
-} from '../api/snapshot-instance-service';
+// ...removed unused imports from snapshot-instance-service
 
 interface ChecklistMaterialItem {
   subjectId: number;
@@ -99,7 +96,11 @@ export function useChecklist(
       setEditable(structure.editable && editablePhase);
       setTemplateName(structure.templateName);
       setInstanceId(structure.instanceId);
+      try {
+        localStorage.setItem('activeChecklistInstanceId', String(structure.instanceId));
+      } catch {}
     } catch (e: any) {
+      console.error(e);
       setError(e?.message || 'Failed loading checklist');
     } finally {
       setLoading(false);
@@ -126,14 +127,13 @@ export function useChecklist(
             )
           )
           .limit(1);
+        const nowIso = new Date().toISOString();
         if (existing[0]) {
           const nextChecked = !existing[0].checked;
+
           await db
             .update(checklistItemState)
-            .set({
-              checked: nextChecked,
-              checkedAt: nextChecked ? new Date().toISOString() : null,
-            })
+            .set({ checked: nextChecked, checkedAt: nextChecked ? nowIso : null })
             .where(eq(checklistItemState.id, existing[0].id));
         } else {
           await db.insert(checklistItemState).values({
@@ -141,7 +141,7 @@ export function useChecklist(
             subjectId,
             materialId,
             checked: true,
-            checkedAt: new Date().toISOString(),
+            checkedAt: nowIso,
           });
         }
         setItems((prev) =>
@@ -164,6 +164,7 @@ export function useChecklist(
           )
         );
       } catch (e: any) {
+        console.error(e);
         setError(e?.message || 'Toggle failed');
       }
     },

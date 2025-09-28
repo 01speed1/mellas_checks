@@ -24,7 +24,7 @@ export function AdminPage(): React.ReactElement {
   async function refreshAll() {
     const [childrenResult, templatesResult] = await Promise.all([
       listChildren(),
-      listScheduleTemplates(),
+      selectedChildId ? listScheduleTemplates(selectedChildId) : listScheduleTemplates(),
     ]);
     setChildrenList(childrenResult as any);
     setTemplatesList(templatesResult as any);
@@ -32,7 +32,7 @@ export function AdminPage(): React.ReactElement {
 
   useEffect(() => {
     refreshAll();
-  }, []);
+  }, [selectedChildId]);
 
   async function createChild(name: string) {
     if (childrenList.some((c) => normalizeName(c.name) === normalizeName(name))) return;
@@ -87,15 +87,16 @@ export function AdminPage(): React.ReactElement {
     setSelectedTemplateId(null);
   }
   async function createTemplate(name: string) {
+    if (!selectedChildId) return;
     if (templatesList.some((t) => normalizeName(t.name) === normalizeName(name))) return;
     const tempId = Date.now();
     const nowIso = new Date().toISOString();
     setTemplatesList([
       ...templatesList,
-      { id: tempId as any, name, createdAt: nowIso, updatedAt: nowIso },
-    ]);
+      { id: tempId as any, name, createdAt: nowIso, updatedAt: nowIso, childId: selectedChildId },
+    ] as any);
     try {
-      await createScheduleTemplate({ name });
+      await createScheduleTemplate({ name, childId: selectedChildId });
     } finally {
       refreshAll();
     }

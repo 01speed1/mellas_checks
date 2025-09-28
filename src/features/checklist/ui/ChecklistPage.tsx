@@ -20,6 +20,7 @@ export function ChecklistPage(): React.ReactElement {
     phase,
     instanceId,
   } = useChecklist(childId, templateId, targetDateIso);
+
   React.useEffect(() => {
     const legacyKeys = ['activeChildIdentifier', 'activeScheduleIdentifier'];
     legacyKeys.forEach((k) => localStorage.removeItem(k));
@@ -32,6 +33,7 @@ export function ChecklistPage(): React.ReactElement {
     return 'Afternoon preparation open';
   }, [phase]);
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
+  const [subjectOnlyRevision, setSubjectOnlyRevision] = useState(0);
   const toggleExpand = useCallback((subjectId: number) => {
     setExpanded((prev) => ({ ...prev, [subjectId]: !prev[subjectId] }));
   }, []);
@@ -64,7 +66,23 @@ export function ChecklistPage(): React.ReactElement {
       },
       {}
     );
-  }, [subjects, instanceId]);
+  }, [subjects, instanceId, subjectOnlyRevision]);
+
+  const readinessState = useMemo(() => {
+    const key = instanceId ? 'subjectOnlyStates:' + instanceId : null;
+    let stored: Record<string, boolean> = {};
+    if (key) {
+      try {
+        stored = JSON.parse(localStorage.getItem(key) || '{}');
+      } catch {}
+    }
+    const emptySubjects = subjects.filter((s) => s.materials.length === 0).map((s) => s.subjectId);
+    const emptySubjectsAllChecked = emptySubjects.every((id) => !!stored[String(id)]);
+    const anyRequirements = emptySubjects.length > 0 || totalMaterials > 0;
+    const materialsAllChecked = items.length === 0 ? true : items.every((i) => i.checked);
+    const allReady = anyRequirements && materialsAllChecked && emptySubjectsAllChecked;
+    return { allReady };
+  }, [subjects, instanceId, subjectOnlyRevision, totalMaterials, items]);
 
   const toggleSubject = useCallback(
     (subjectId: number) => {
@@ -81,7 +99,7 @@ export function ChecklistPage(): React.ReactElement {
         stored[String(subjectId)] = !current;
         localStorage.setItem(key, JSON.stringify(stored));
         // force re-render by triggering state change via expanded toggle map (lightweight)
-        setExpanded((prev) => ({ ...prev }));
+        setSubjectOnlyRevision((r) => r + 1);
         return;
       }
       const agg = subjectAggregate[subjectId];
@@ -90,14 +108,14 @@ export function ChecklistPage(): React.ReactElement {
     },
     [subjects, subjectAggregate, toggle]
   );
-  const showAllReady = allComplete && totalMaterials > 0;
+  const showAllReady = readinessState.allReady;
   return (
     <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       <h1>Checklist</h1>
       {templateName && <div style={{ fontSize: '1.05rem', fontWeight: 600 }}>{templateName}</div>}
       {targetDateIso && <div>Target date: {targetDateIso}</div>}
       {phase && (
-        <div style={{ fontSize: '.9rem', opacity: 0.85 }}>
+        <div style={{ fontSize: '.9rem', opacity: 0.85 }} aria-live="polite" aria-atomic="true">
           {phaseLabel} {editable ? '' : '(read only)'}
         </div>
       )}
@@ -132,7 +150,7 @@ export function ChecklistPage(): React.ReactElement {
               >
                 <input
                   type="checkbox"
-                  disabled={!editable || s.materials.length === 0}
+                  disabled={!editable}
                   checked={subjectAggregate[s.subjectId]?.checked || false}
                   onChange={() => toggleSubject(s.subjectId)}
                   ref={(el) => {
@@ -142,8 +160,15 @@ export function ChecklistPage(): React.ReactElement {
                 />
                 <button
                   type="button"
-                  disabled={!hasMaterials}
-                  onClick={() => hasMaterials && toggleExpand(s.subjectId)}
+                  onClick={() => {
+                    if (hasMaterials) {
+                      toggleExpand(s.subjectId);
+                    } else if (editable) {
+                      toggleSubject(s.subjectId);
+                    }
+                  }}
+                  aria-expanded={hasMaterials ? isOpen : undefined}
+                  aria-controls={hasMaterials ? 'subject-panel-' + s.subjectId : undefined}
                   style={{
                     flex: 1,
                     textAlign: 'left',
@@ -151,7 +176,8 @@ export function ChecklistPage(): React.ReactElement {
                     border: 'none',
                     padding: 0,
                     fontWeight: 600,
-                    cursor: hasMaterials ? 'pointer' : 'default',
+                    cursor: editable ? 'pointer' : 'default',
+                    opacity: !editable ? 0.6 : 1,
                   }}
                 >
                   {s.subjectName}{' '}
@@ -163,6 +189,7 @@ export function ChecklistPage(): React.ReactElement {
               )}
               {hasMaterials && isOpen && (
                 <ul
+                  id={'subject-panel-' + s.subjectId}
                   style={{
                     listStyle: 'none',
                     padding: 0,

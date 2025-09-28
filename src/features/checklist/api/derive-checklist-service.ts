@@ -8,7 +8,7 @@ import {
   scheduleVersion,
   subject,
   material,
-  subjectMaterial,
+  templateSubjectMaterial,
 } from '../../../db/schema';
 import {
   ensureScheduleVersionForDate,
@@ -66,9 +66,17 @@ export async function buildChecklistStructure(
     subjectIds.length === 0
       ? []
       : await db
-          .select({ subjectId: subjectMaterial.subjectId, materialId: subjectMaterial.materialId })
-          .from(subjectMaterial)
-          .where(inArray(subjectMaterial.subjectId, subjectIds));
+          .select({
+            subjectId: templateSubjectMaterial.subjectId,
+            materialId: templateSubjectMaterial.materialId,
+          })
+          .from(templateSubjectMaterial)
+          .where(
+            and(
+              eq(templateSubjectMaterial.templateId, templateId),
+              inArray(templateSubjectMaterial.subjectId, subjectIds)
+            )
+          );
   const materialIds = Array.from(new Set(links.map((l) => l.materialId)));
   const materials =
     materialIds.length === 0
@@ -102,6 +110,9 @@ export async function buildChecklistStructure(
       total += 1;
       if (checked) checkedCount += 1;
     }
+    matEntries.sort((a, b) =>
+      a.materialName.localeCompare(b.materialName, undefined, { sensitivity: 'base' })
+    );
     subjects.push({
       subjectId: block.subjectId,
       subjectName: block.subjectName,

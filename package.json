@@ -10,7 +10,10 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext .ts,.tsx",
     "drizzle:generate": "drizzle-kit generate",
+    "db:generate": "drizzle-kit generate",
     "migrate": "node scripts/drizzle-migrate.mjs",
+    "migrate:gen": "node scripts/drizzle-migrate.mjs --generate-first",
+    "seed": "node --loader ts-node/esm scripts/seed.ts",
     "db:reset": "node scripts/db-reset.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

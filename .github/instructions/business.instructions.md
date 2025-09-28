@@ -9,12 +9,12 @@ Unified source of business logic truth for AI and contributors. Technical repo r
 
 Core Domain Concepts
 Child: A student using the checklist. Identified by unique name (first name) in current scope.
-ScheduleTemplate: Logical definition of an ordered list of subjects for a school day (e.g. Normal, Taller). Admin creates and edits templates only (no per-date configuration in admin UI).
+ScheduleTemplate: Child-scoped logical definition of an ordered list of subjects for a school day (e.g. Normal, Taller). Name uniqueness is enforced per child (same template name can exist for different children). Admin creates and edits templates only (no per-date configuration in admin UI).
 ScheduleVersion: Internal snapshot auto-created only when a child commits a template for tomorrow. Never shown or selected in admin. Admin does not manage versions explicitly.
 ScheduleBlock: An entry in a version that links to a subject and has an integer blockOrder. No time-of-day semantics in current iteration.
 Subject: Academic or activity unit (Math, PE, Music).
 Material: A physical or digital item needed (Notebook, Pencil Case, Gym Shoes).
-SubjectMaterial: Association (many-to-many) from subject to material meaning that every time the subject is scheduled, those materials are required.
+TemplateSubjectMaterial: Association (many-to-many) between a specific template's inclusion of a subject and a material, allowing materials to differ for the same subject across different templates or children.
 ChecklistInstance: A per child per targetDate container representing one preparation session for tomorrow. Only one per (childId, targetDate). The template used is implicit via the scheduleVersionId.
 ChecklistItemState: A row representing the readiness state of a single required material derived from (ordered subjects in snapshot × materials linked to that subject at snapshot time).
 
@@ -23,7 +23,7 @@ Context: Child selects a template for tomorrow (target date is always implicit: 
 
 1. Ensure or create schedule version snapshot V for that template and implicit date.
 2. Enumerate ordered blocks.
-3. For each block subject list its materials via SubjectMaterial at snapshot time.
+3. For each block subject list its materials via TemplateSubjectMaterial for that template at snapshot time.
 4. Build checklist items preserving subject order.
 5. Persist or hydrate states.
 
@@ -48,7 +48,7 @@ Phases:
    Single utility determines current phase and editability.
 
 Invariants
-Snapshot (scheduleVersion) immutable once created for a target date. Structural template edits affect only future snapshots. Subject ordering is preserved. Materials linkage at snapshot time applies to all appearances of the subject. A checklist instance is uniquely identified by (childId, targetDate). Template identity is implicit through scheduleVersionId.
+Snapshot (scheduleVersion) immutable once created for a target date. Structural template edits affect only future snapshots. Subject ordering is preserved. Materials linkage is evaluated per template (not globally per subject) and the snapshot captures that per-template association. A checklist instance is uniquely identified by (childId, targetDate). Template identity is implicit through scheduleVersionId.
 
 Persistence Contracts (Conceptual)
 ChecklistInstance: { id, childId, targetDateISO, scheduleVersionId, createdAt } (unique on childId+targetDateISO). targetDateISO is always tomorrow at the time of selection.
@@ -75,7 +75,7 @@ End Of Business Rules
 Admin Capabilities (Reference)
 
 1. Manage children (create, rename, delete).
-2. Manage subjects (reusable across templates) and materials; link materials to subjects.
+2. Manage subjects (reusable across templates) and materials; link materials to a template's subjects (template-specific associations).
 3. Manage schedule templates (create templates and order their subjects via blocks) without choosing dates or versions.
 4. View (future extension) aggregated readiness states per child per date; versions remain hidden.
 

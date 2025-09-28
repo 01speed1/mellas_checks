@@ -21,27 +21,23 @@ export const material = sqliteTable('material', {
   updatedAt: text('updated_at').notNull().default('CURRENT_TIMESTAMP'),
 });
 
-export const subjectMaterial = sqliteTable(
-  'subject_material',
+// Removed global subject_material; replaced by template-scoped mapping
+
+export const scheduleTemplate = sqliteTable(
+  'schedule_template',
   {
-    subjectId: integer('subject_id')
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    childId: integer('child_id')
       .notNull()
-      .references(() => subject.id, { onDelete: 'cascade' }),
-    materialId: integer('material_id')
-      .notNull()
-      .references(() => material.id, { onDelete: 'cascade' }),
+      .references(() => child.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    createdAt: text('created_at').notNull().default('CURRENT_TIMESTAMP'),
+    updatedAt: text('updated_at').notNull().default('CURRENT_TIMESTAMP'),
   },
   (table) => ({
-    pk: primaryKey({ columns: [table.subjectId, table.materialId] }),
+    uniqueChildName: uniqueIndex('idx_schedule_template_child_name').on(table.childId, table.name),
   })
 );
-
-export const scheduleTemplate = sqliteTable('schedule_template', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  name: text('name').notNull().unique(),
-  createdAt: text('created_at').notNull().default('CURRENT_TIMESTAMP'),
-  updatedAt: text('updated_at').notNull().default('CURRENT_TIMESTAMP'),
-});
 
 export const scheduleVersion = sqliteTable('schedule_version', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -101,7 +97,7 @@ export const checklistItemState = sqliteTable(
     materialId: integer('material_id')
       .notNull()
       .references(() => material.id),
-    checked: integer('checked', { mode: 'boolean' }).notNull().default(false),
+    checked: integer('is_checked', { mode: 'boolean' }).notNull().default(false),
     checkedAt: text('checked_at'),
     createdAt: text('created_at').notNull().default('CURRENT_TIMESTAMP'),
     updatedAt: text('updated_at').notNull().default('CURRENT_TIMESTAMP'),
@@ -137,3 +133,27 @@ export const subjectRequirement = sqliteTable('subject_requirement', {
   createdAt: text('created_at').notNull().default('CURRENT_TIMESTAMP'),
   resolvedAt: text('resolved_at'),
 });
+
+export const templateSubjectMaterial = sqliteTable(
+  'template_subject_material',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    templateId: integer('template_id')
+      .notNull()
+      .references(() => scheduleTemplate.id, { onDelete: 'cascade' }),
+    subjectId: integer('subject_id')
+      .notNull()
+      .references(() => subject.id, { onDelete: 'cascade' }),
+    materialId: integer('material_id')
+      .notNull()
+      .references(() => material.id, { onDelete: 'cascade' }),
+    createdAt: text('created_at').notNull().default('CURRENT_TIMESTAMP'),
+  },
+  (table) => ({
+    uniqueTemplateSubjectMaterial: uniqueIndex('idx_template_subject_material_unique').on(
+      table.templateId,
+      table.subjectId,
+      table.materialId
+    ),
+  })
+);

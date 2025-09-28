@@ -3,7 +3,6 @@ import {
   child,
   subject,
   material,
-  subjectMaterial,
   scheduleTemplate,
   scheduleVersion,
   scheduleBlock,
@@ -11,6 +10,7 @@ import {
   checklistItemState,
   auditEvent,
   subjectRequirement,
+  templateSubjectMaterial,
 } from './schema';
 
 export type Child = InferModel<typeof child, 'select'>;
@@ -22,8 +22,8 @@ export type NewSubject = InferModel<typeof subject, 'insert'>;
 export type Material = InferModel<typeof material, 'select'>;
 export type NewMaterial = InferModel<typeof material, 'insert'>;
 
-export type SubjectMaterial = InferModel<typeof subjectMaterial, 'select'>;
-export type NewSubjectMaterial = InferModel<typeof subjectMaterial, 'insert'>;
+export type TemplateSubjectMaterial = InferModel<typeof templateSubjectMaterial, 'select'>;
+export type NewTemplateSubjectMaterial = InferModel<typeof templateSubjectMaterial, 'insert'>;
 
 export type ScheduleTemplate = InferModel<typeof scheduleTemplate, 'select'>;
 export type NewScheduleTemplate = InferModel<typeof scheduleTemplate, 'insert'>;

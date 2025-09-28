@@ -22,6 +22,7 @@ async function dropAllTables(client) {
     'material',
     'schedule_template',
     'child',
+    '__drizzle_migrations',
   ];
   for (const tableName of tables) {
     try {
