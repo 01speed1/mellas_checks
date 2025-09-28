@@ -1,1 +1,13 @@
-DELETE FROM schedule_template WHERE name IN ('Día 1-A','Día 2-A','Día 3-A','Día 4-A','Día 5-A','Día 1-B','Día 2-B','Día 3-B','Día 4-B');
+DELETE FROM schedule_template
+WHERE
+    name IN (
+        'Día 1-A',
+        'Día 2-A',
+        'Día 3-A',
+        'Día 4-A',
+        'Día 5-A',
+        'Día 1-B',
+        'Día 2-B',
+        'Día 3-B',
+        'Día 4-B'
+    );

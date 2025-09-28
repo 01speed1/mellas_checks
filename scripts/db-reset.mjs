@@ -9,21 +9,21 @@ function getEnvVariable(name) {
   return value;
 }
 
-async function dropAllTables(client) {
-  const tables = [
+async function dropTables(client, full) {
+  const baseTables = [
     'checklist_item_state',
     'checklist_instance',
     'schedule_block',
     'schedule_version',
-    'subject_material',
+    'template_subject_material',
     'subject_requirement',
     'audit_event',
     'subject',
     'material',
     'schedule_template',
     'child',
-    '__drizzle_migrations',
   ];
+  const tables = full ? [...baseTables, '__drizzle_migrations'] : baseTables;
   for (const tableName of tables) {
     try {
       await client.execute(`DROP TABLE IF EXISTS ${tableName};`);
@@ -37,13 +37,19 @@ async function dropAllTables(client) {
 }
 
 async function run() {
+  const full = process.argv.includes('--full');
   const url = getEnvVariable('VITE_TURSO_DATABASE_URL');
   const authToken = getEnvVariable('VITE_TURSO_AUTH_TOKEN');
   const client = createClient({ url, authToken });
-  await dropAllTables(client);
+  await dropTables(client, full);
   const db = drizzle(client);
-  await migrate(db, { migrationsFolder: 'drizzle/migrations' });
-  process.stdout.write('Database reset and migrations re-applied\n');
+  if (full) {
+    await migrate(db, { migrationsFolder: 'drizzle/migrations' });
+    process.stdout.write('Full reset including migrations table. Migrations re-applied.\n');
+  } else {
+    await migrate(db, { migrationsFolder: 'drizzle/migrations' });
+    process.stdout.write('Domain reset preserving migrations history.\n');
+  }
 }
 
 run().catch((error) => {

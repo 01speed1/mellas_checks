@@ -15,7 +15,6 @@ export function ChecklistPage(): React.ReactElement {
     toggle,
     editable,
     subjects,
-    refresh,
     templateName,
     phase,
     instanceId,
@@ -37,9 +36,17 @@ export function ChecklistPage(): React.ReactElement {
   const toggleExpand = useCallback((subjectId: number) => {
     setExpanded((prev) => ({ ...prev, [subjectId]: !prev[subjectId] }));
   }, []);
+  const lexicalSubjects = useMemo(() => {
+    return subjects.map((s) => ({
+      ...s,
+      materials: [...s.materials].sort((a, b) =>
+        a.materialName.localeCompare(b.materialName, 'es')
+      ),
+    }));
+  }, [subjects]);
   const totalMaterials = useMemo(
-    () => subjects.reduce((acc, s) => acc + s.materials.length, 0),
-    [subjects]
+    () => lexicalSubjects.reduce((acc, s) => acc + s.materials.length, 0),
+    [lexicalSubjects]
   );
   const subjectAggregate = useMemo(() => {
     const key = instanceId ? 'subjectOnlyStates:' + instanceId : null;
@@ -49,7 +56,7 @@ export function ChecklistPage(): React.ReactElement {
         stored = JSON.parse(localStorage.getItem(key) || '{}');
       } catch {}
     }
-    return subjects.reduce<Record<number, { checked: boolean; indeterminate: boolean }>>(
+    return lexicalSubjects.reduce<Record<number, { checked: boolean; indeterminate: boolean }>>(
       (acc, s) => {
         if (s.materials.length === 0) {
           const storedVal = key ? stored[String(s.subjectId)] : false;
@@ -66,7 +73,7 @@ export function ChecklistPage(): React.ReactElement {
       },
       {}
     );
-  }, [subjects, instanceId, subjectOnlyRevision]);
+  }, [lexicalSubjects, instanceId, subjectOnlyRevision]);
 
   const readinessState = useMemo(() => {
     const key = instanceId ? 'subjectOnlyStates:' + instanceId : null;
@@ -76,17 +83,19 @@ export function ChecklistPage(): React.ReactElement {
         stored = JSON.parse(localStorage.getItem(key) || '{}');
       } catch {}
     }
-    const emptySubjects = subjects.filter((s) => s.materials.length === 0).map((s) => s.subjectId);
+    const emptySubjects = lexicalSubjects
+      .filter((s) => s.materials.length === 0)
+      .map((s) => s.subjectId);
     const emptySubjectsAllChecked = emptySubjects.every((id) => !!stored[String(id)]);
     const anyRequirements = emptySubjects.length > 0 || totalMaterials > 0;
     const materialsAllChecked = items.length === 0 ? true : items.every((i) => i.checked);
     const allReady = anyRequirements && materialsAllChecked && emptySubjectsAllChecked;
     return { allReady };
-  }, [subjects, instanceId, subjectOnlyRevision, totalMaterials, items]);
+  }, [lexicalSubjects, instanceId, subjectOnlyRevision, totalMaterials, items]);
 
   const toggleSubject = useCallback(
     (subjectId: number) => {
-      const target = subjects.find((s) => s.subjectId === subjectId);
+      const target = lexicalSubjects.find((s) => s.subjectId === subjectId);
       if (!target) return;
       if (target.materials.length === 0) {
         if (!instanceId || !editable) return;
@@ -106,7 +115,7 @@ export function ChecklistPage(): React.ReactElement {
       const shouldCheck = !(agg && agg.checked);
       target.materials.forEach((m) => toggle(subjectId, m.materialId));
     },
-    [subjects, subjectAggregate, toggle]
+    [lexicalSubjects, subjectAggregate, toggle]
   );
   const showAllReady = readinessState.allReady;
   return (
@@ -126,13 +135,8 @@ export function ChecklistPage(): React.ReactElement {
         </div>
       )}
       {showAllReady && <div style={{ color: 'green' }}>All ready</div>}
-      <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center' }}>
-        <button onClick={() => refresh()} disabled={loading} style={{ padding: '.25rem .75rem' }}>
-          Refresh
-        </button>
-      </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {subjects.map((s) => {
+        {lexicalSubjects.map((s) => {
           const hasMaterials = s.materials.length > 0;
           const isOpen = expanded[s.subjectId] || false;
           return (
@@ -220,8 +224,8 @@ export function ChecklistPage(): React.ReactElement {
             </div>
           );
         })}
-        {subjects.length === 0 && !loading && <div>No subjects</div>}
-        {totalMaterials === 0 && subjects.length > 0 && !loading && (
+        {lexicalSubjects.length === 0 && !loading && <div>No subjects</div>}
+        {totalMaterials === 0 && lexicalSubjects.length > 0 && !loading && (
           <div style={{ opacity: 0.7 }}>No materials required</div>
         )}
       </div>

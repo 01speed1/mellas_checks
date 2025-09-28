@@ -18,6 +18,7 @@ export function ScheduleSelector(): React.ReactElement {
   const [phase, setPhase] = useState<string | null>(null);
   const [activeTemplateId, setActiveTemplateId] = useState<number | null>(null);
   const [targetDateIso, setTargetDateIso] = useState<string | null>(null);
+  const [activeChildId, setActiveChildId] = useState<number | null>(null);
 
   useEffect(() => {
     const result = purgeCycleState({ clearChild: false });
@@ -36,10 +37,35 @@ export function ScheduleSelector(): React.ReactElement {
   }, []);
 
   useEffect(() => {
+    const storedChildId = localStorage.getItem('activeChildId');
+    if (storedChildId) setActiveChildId(Number(storedChildId));
+    else setActiveChildId(null);
+  }, []);
+
+  useEffect(() => {
     let active = true;
-    listScheduleTemplates()
+    if (activeChildId == null) {
+      setTemplates([]);
+      setLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+    setLoading(true);
+    listScheduleTemplates(activeChildId)
       .then((rows) => {
-        if (active) setTemplates(rows as any);
+        if (!active) return;
+        const parseDay = (name: string) => {
+          const match = name.match(/Día\s+(\d+)/i);
+          return match ? Number(match[1]) : 999;
+        };
+        const ordered = [...(rows as ScheduleTemplate[])].sort((a, b) => {
+          const da = parseDay(a.name);
+          const db = parseDay(b.name);
+          if (da !== db) return da - db;
+          return a.name.localeCompare(b.name, 'es');
+        });
+        setTemplates(ordered);
       })
       .catch(() => {
         if (active) setErrorMessage('Failed loading templates');
@@ -50,7 +76,7 @@ export function ScheduleSelector(): React.ReactElement {
     return () => {
       active = false;
     };
-  }, []);
+  }, [activeChildId]);
 
   async function handleSelect(templateId: number): Promise<void> {
     const childIdRaw = localStorage.getItem('activeChildId');
@@ -113,6 +139,7 @@ export function ScheduleSelector(): React.ReactElement {
       )}
       {loading && <div>Loading...</div>}
       {errorMessage && <div>{errorMessage}</div>}
+      {!loading && activeChildId == null && <div>Select a child first</div>}
       {!loading && templates.length === 0 && <div>No templates</div>}
       <ul
         style={{

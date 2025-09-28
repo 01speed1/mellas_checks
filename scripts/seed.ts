@@ -26,23 +26,73 @@ const JUANITA_TEMPLATES: Array<{ name: string; subjects: string[] }> = [
   { name: 'Día 2', subjects: ['Inglés', 'Física', 'Matemáticas', 'Estadística', 'Español'] },
   { name: 'Día 3', subjects: ['Español', 'Geometría', 'Matemáticas', 'Tecnología'] },
   { name: 'Día 4', subjects: ['Química', 'Biología', 'Sociales', 'Inglés'] },
-  { name: 'Día 5', subjects: ['Lectura Crítica', 'Refuerzo', 'Vocacional', 'Ética', 'Cátedra', 'Five'] },
+  {
+    name: 'Día 5',
+    subjects: ['Lectura Crítica', 'Refuerzo', 'Vocacional', 'Ética', 'Cátedra', 'Five'],
+  },
 ];
 
 const VALENTINA_TEMPLATES: Array<{ name: string; subjects: string[] }> = [
-  { name: 'Día 1', subjects: ['Educación Física', 'Educación Física', 'Español', 'Español', 'Ética', 'Matemáticas', 'Matemáticas'] },
-  { name: 'Día 2', subjects: ['Tecnología', 'Tecnología', 'Inglés', 'Inglés', 'Física', 'Sociales', 'Sociales'] },
-  { name: 'Día 3', subjects: ['Sociales', 'Sociales', 'Cátedra', 'Biología', 'Biología', 'Inglés', 'Inglés'] },
-  { name: 'Día 4', subjects: ['Matemáticas', 'Matemáticas', 'Lectura Crítica', 'Five', 'Español', 'Español', 'Geometría'] },
-  { name: 'Día 5', subjects: ['Inglés', 'Refuerzo', 'Vocacional', 'Vocacional', 'Química', 'Química', 'Religión'] },
+  {
+    name: 'Día 1',
+    subjects: [
+      'Educación Física',
+      'Educación Física',
+      'Español',
+      'Español',
+      'Ética',
+      'Matemáticas',
+      'Matemáticas',
+    ],
+  },
+  {
+    name: 'Día 2',
+    subjects: ['Tecnología', 'Tecnología', 'Inglés', 'Inglés', 'Física', 'Sociales', 'Sociales'],
+  },
+  {
+    name: 'Día 3',
+    subjects: ['Sociales', 'Sociales', 'Cátedra', 'Biología', 'Biología', 'Inglés', 'Inglés'],
+  },
+  {
+    name: 'Día 4',
+    subjects: [
+      'Matemáticas',
+      'Matemáticas',
+      'Lectura Crítica',
+      'Five',
+      'Español',
+      'Español',
+      'Geometría',
+    ],
+  },
+  {
+    name: 'Día 5',
+    subjects: ['Inglés', 'Refuerzo', 'Vocacional', 'Vocacional', 'Química', 'Química', 'Religión'],
+  },
 ];
 
 const JUANITA_TEMPLATE_SUBJECT_MATERIALS: Record<string, Record<string, string[]>> = {
-  'Día 1': { Inglés: ['Libro Run Liam Run', 'Hoja examen'], Sociales: ['Hoja pergamino mapa físico de Asia'] },
-  'Día 2': { Inglés: ['Libro Run Liam Run', 'Hoja examen'], Física: ['Calculadora', 'Transportador', 'Regla'], Matemáticas: ['Diccionario matemático (15 Oct)'], Español: ['Libro Frankenstein'] },
-  'Día 3': { Español: ['Libro Frankenstein'], Geometría: ['Contra métrica'], Tecnología: ['Estudiar examen', 'Sesión 10 terminada'] },
+  'Día 1': {
+    Inglés: ['Libro Run Liam Run', 'Hoja examen'],
+    Sociales: ['Hoja pergamino mapa físico de Asia'],
+  },
+  'Día 2': {
+    Inglés: ['Libro Run Liam Run', 'Hoja examen'],
+    Física: ['Calculadora', 'Transportador', 'Regla'],
+    Matemáticas: ['Diccionario matemático (15 Oct)'],
+    Español: ['Libro Frankenstein'],
+  },
+  'Día 3': {
+    Español: ['Libro Frankenstein'],
+    Geometría: ['Contra métrica'],
+    Tecnología: ['Estudiar examen', 'Sesión 10 terminada'],
+  },
   'Día 4': { Química: ['Tabla periódica'] },
-  'Día 5': { 'Lectura Crítica': ['Libro enlaces G', 'Material adicional'], Vocacional: ['Materiales de artes'], Ética: ['Proyecto de vida impreso', 'Laberinto terminado'] },
+  'Día 5': {
+    'Lectura Crítica': ['Libro enlaces G', 'Material adicional'],
+    Vocacional: ['Materiales de artes'],
+    Ética: ['Proyecto de vida impreso', 'Laberinto terminado'],
+  },
 };
 
 const VALENTINA_SUBJECT_MATERIALS_BASE: Record<string, string[]> = {
@@ -174,11 +224,16 @@ async function main() {
       for (const subjName of templateDef.subjects) {
         const subjId = existingSubjectMap.get(subjName);
         if (!subjId) continue;
-        await db.insert(scheduleBlock).values({ versionId, blockOrder: orderCounter, subjectId: subjId });
+        await db
+          .insert(scheduleBlock)
+          .values({ versionId, blockOrder: orderCounter, subjectId: subjId });
         orderCounter += 1;
       }
     }
-    const mappingBase = templateDef.childId === juanitaId ? JUANITA_TEMPLATE_SUBJECT_MATERIALS : VALENTINA_TEMPLATE_SUBJECT_MATERIALS;
+    const mappingBase =
+      templateDef.childId === juanitaId
+        ? JUANITA_TEMPLATE_SUBJECT_MATERIALS
+        : VALENTINA_TEMPLATE_SUBJECT_MATERIALS;
     const mapping = mappingBase[templateDef.name] || {};
     for (const [subjName, mats] of Object.entries(mapping)) {
       if (!templateDef.subjects.includes(subjName)) continue;
@@ -187,7 +242,10 @@ async function main() {
       for (const matName of mats) {
         const matId = existingMaterialMap.get(matName);
         if (!matId) continue;
-        await db.insert(templateSubjectMaterial).values({ templateId, subjectId: subjId, materialId: matId }).onConflictDoNothing();
+        await db
+          .insert(templateSubjectMaterial)
+          .values({ templateId, subjectId: subjId, materialId: matId })
+          .onConflictDoNothing();
       }
     }
   }
