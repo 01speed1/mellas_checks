@@ -1,38 +1,32 @@
 import React from 'react';
+import { Card, CardHeader, CardTitle } from '@/components/ui/8bit/card';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/8bit/avatar';
+
+import BlueMage from '@/assets/images/blue-mage-avatar.png';
+import PurpleMage from '@/assets/images/purple-mage-avatar.png';
 
 interface IdentityCardProps {
   childId: number;
   name: string;
-  imageSrc: string;
   onSelect: (childId: number) => void;
   reverse?: boolean;
 }
 
 export function IdentityCard(props: IdentityCardProps): React.ReactElement {
-  const layoutClass = props.reverse ? 'md:flex-row-reverse' : 'md:flex-row';
+  const layoutClass = props.reverse ? 'flex-row-reverse' : 'flex-row';
+  const selectedMage = props.childId % 2 === 0 ? BlueMage : PurpleMage;
   return (
-    <button
-      type="button"
+    <Card
+      className={`press-ripple flex ${layoutClass} items-center`}
       onClick={() => props.onSelect(props.childId)}
-      className={
-        'card w-full px-4 py-4 md:py-6 bg-background/40 border border-foreground/40 rounded-none flex flex-col gap-4 ' +
-        layoutClass
-      }
     >
-      <div className="w-full md:w-1/2 flex items-center justify-center">
-        <img
-          src={props.imageSrc}
-          alt={props.name}
-          className="aspect-square w-48 h-48 object-cover image-render-pixelized rounded-md"
-          loading="lazy"
-          draggable={false}
-        />
-      </div>
-      <div className="w-full md:w-1/2 flex items-center justify-center">
-        <span className="cardTitle text-2xl md:text-3xl text-center leading-snug select-none">
-          {props.name}
-        </span>
-      </div>
-    </button>
+      <Avatar className="size-1/2 flex items-center justify-center">
+        <AvatarImage className="w-full h-auto" src={selectedMage} alt={props.name} />
+        <AvatarFallback>CN</AvatarFallback>
+      </Avatar>
+      <CardHeader className="size-1/2">
+        <CardTitle className="text-3xl">{props.name}</CardTitle>
+      </CardHeader>
+    </Card>
   );
 }

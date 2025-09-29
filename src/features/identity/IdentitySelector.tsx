@@ -5,6 +5,8 @@ import { listChildren } from '../../db/repositories/child-repository';
 import { Child } from '../../db/types';
 import { IdentityCard } from './ui/IdentityCard';
 
+import { Card, CardHeader, CardTitle } from '@/components/ui/8bit/card';
+
 export function IdentitySelector(): React.ReactElement {
   const navigate = useNavigate();
 
@@ -31,24 +33,23 @@ export function IdentitySelector(): React.ReactElement {
   function handleSelect(childId: number): void {
     localStorage.setItem('activeChildId', String(childId));
     navigate('/schedule');
-
-  }
-  function buildAvatarPath(nameValue: string): string {
-    const base = nameValue.trim().toLowerCase().replace(/\s+/g, '-');
-    return `/avatars/${base}.png`;
   }
   return (
-    <div className="w-full min-h-screen px-4 py-6 flex flex-col items-center">
-      <h1 className="cardTitle text-3xl mb-8">Select Identity</h1>
+    <div className="flex flex-col items-center space-around min-h-[100dvh">
+      <Card className="flex w-full">
+        <CardHeader className="text-center">
+          <CardTitle className="text-3xl">¿Cual mella eres?</CardTitle>
+        </CardHeader>
+      </Card>
       {loading && <div className="opacity-80">Loading...</div>}
       {!loading && childrenList.length === 0 && <div className="opacity-80">No children</div>}
-      <div className="w-full max-w-5xl flex flex-col gap-12">
+
+      <div className="flex flex-1 flex-col justify-center w-full">
         {childrenList.map((child, index) => (
           <IdentityCard
             key={child.id}
             childId={child.id}
             name={child.name}
-            imageSrc={buildAvatarPath(child.name)}
             onSelect={handleSelect}
             reverse={index % 2 === 1}
           />

@@ -10,6 +10,25 @@ import { evaluateStoredCycle } from '../../lib/cycle-phase';
 import { purgeCycleState } from '../../lib/cycle-state';
 import { ScheduleTemplate } from '../../db/types';
 
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardDescription,
+} from '@/components/ui/8bit/card';
+
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+  CommandShortcut,
+} from '@/components/ui/command';
+
 export function ScheduleSelector(): React.ReactElement {
   const navigate = useNavigate();
   const [templates, setTemplates] = useState<ScheduleTemplate[]>([]);
@@ -118,58 +137,71 @@ export function ScheduleSelector(): React.ReactElement {
 
   const phaseLabel = useMemo(() => {
     if (!phase) return '';
-    if (phase === 'pre_window') return 'Waiting (after 15:00 prep opens)';
-    if (phase === 'prep_window') return 'Preparation window open';
-    if (phase === 'locked') return 'Locked (cannot reselect)';
-    if (phase === 'afternoon_next') return 'New cycle open';
+    if (phase === 'pre_window')
+      return 'Esperando, aun estas en clase! (después de las 3:00 pm se abre)';
+    if (phase === 'prep_window') return 'Puedes hacer checklist!';
+    if (phase === 'locked') return 'Bloqueado ';
+    if (phase === 'afternoon_next') return 'Nuevo ciclo abierto';
     return '';
   }, [phase]);
 
+  const templatesList = templates.map((template) => ({
+    id: template.id,
+    value: template.name,
+    symbol: (isActive: boolean) => {
+      const className = isActive ? 'current' : '';
+
+      return <span>{template.name}</span>;
+    },
+  }));
+
   return (
-    <div style={{ padding: '1rem' }}>
-      <h1>Select Schedule For Tomorrow</h1>
-      {phase && (
-        <div style={{ marginBottom: '.5rem', fontSize: '.9rem', opacity: 0.85 }}>{phaseLabel}</div>
-      )}
-      {activeTemplateId && targetDateIso && (
-        <div style={{ marginBottom: '.75rem', fontSize: '.85rem' }}>
-          Selected template: {templates.find((t) => t.id === activeTemplateId)?.name || 'Unknown'} /
-          Target date: {targetDateIso}
-        </div>
-      )}
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Elige tu horario de mañana</CardTitle>
+          {phase && <CardDescription>{phaseLabel}</CardDescription>}
+        </CardHeader>
+        {activeTemplateId && targetDateIso && (
+          <CardContent>
+            <p>
+              horario seleccionado:
+              {templates.find((t) => t.id === activeTemplateId)?.name || 'Unknown'}
+            </p>
+            <p> Fecha de tu horario: {targetDateIso}</p>
+          </CardContent>
+        )}
+      </Card>
+
       {loading && <div>Loading...</div>}
       {errorMessage && <div>{errorMessage}</div>}
       {!loading && activeChildId == null && <div>Select a child first</div>}
       {!loading && templates.length === 0 && <div>No templates</div>}
-      <ul
-        style={{
-          listStyle: 'none',
-          padding: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.75rem',
-        }}
-      >
-        {templates.map((t) => {
-          const isActive = t.id === activeTemplateId;
-          return (
-            <li key={t.id}>
-              <button
-                type="button"
-                onClick={() => handleSelect(t.id)}
-                disabled={disableSelection && !isActive}
-                style={{
-                  fontWeight: isActive ? 'bold' : 'normal',
-                  opacity: disableSelection && !isActive ? 0.55 : 1,
-                }}
-              >
-                {t.name}
-                {isActive ? ' (current)' : ''}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
+
+      {!loading && templates.length > 0 && (
+        <Command>
+          <CommandInput placeholder="buscar horario..." />
+          <CommandList>
+            <CommandEmpty>No hay horarios.</CommandEmpty>
+            <CommandGroup heading="Horarios">
+              {templates.map((template) => {
+                const isActive = template.id === activeTemplateId;
+                return (
+                  <CommandItem
+                    key={template.id}
+                    value={template.name}
+                    onSelect={() => handleSelect(template.id)}
+                    className={isActive ? 'font-bold' : ''}
+                  >
+                    {template.name}
+                    {isActive ? ' (current)' : ''}
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      )}
+    </>
   );
 }
