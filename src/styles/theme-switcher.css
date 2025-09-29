@@ -1,0 +1,31 @@
+.theme-switcher-button {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  font-size: 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.theme-switcher-button:active {
+  transform: scale(0.92);
+}
+
+.theme-switcher-icon {
+  line-height: 1;
+}
+
+@media (min-width: 600px) {
+  .theme-switcher-button {
+    top: 12px;
+    left: 12px;
+  }
+}

@@ -9,7 +9,8 @@ Primary Stack:
 
 - Frontend: React (latest) with React Router.
 - Build tool: Vite (React + TypeScript template) unless explicitly changed later.
-- Styling: 8bitcn UI library (https://www.8bitcn.com/docs) for consistent retro themed components. Tailwind CSS is not to be used. Supplement with minimal locally scoped CSS modules only when a required pattern is not covered by the library and keep them small and semantic.
+  Styling: 8bitcn UI library (https://www.8bitcn.com/docs) for consistent retro themed components. Tailwind CSS is permitted only as the utility layer required by 8bitcn provided components. No additional third-party global styling frameworks (Bootstrap, Material UI) are allowed. Hand authored utility proliferation should be avoided; prefer semantic class names in local CSS when a pattern is not covered by 8bitcn.
+  Custom CSS rules must live in standalone `.css` files (either `src/styles/` global or feature-local `styles/` folder) using class names; avoid large inline style objects except for ultra-local one-off layout tweaks. Keep each CSS file focused and small. Tailwind setup (config, base layer import) must remain minimal and only include what 8bitcn components depend on.
 - State management: Prefer local component state and lightweight custom hooks. Introduce a library (e.g. Zustand) only if complexity grows (multi-page shared state + persistence) and after explicit approval.
 - Database: Turso (libSQL). Accessed through a thin data layer abstraction. No direct SQL scattered through UI components.
 - Deployment: To be defined (suggest Netlify / Vercel for frontend; Turso handles DB). Avoid deployment-specific code until environment strategy is confirmed.

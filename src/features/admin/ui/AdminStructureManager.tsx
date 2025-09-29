@@ -11,6 +11,7 @@ import {
   listTemplateSubjectMaterials,
   attachMaterialToTemplateSubject,
   detachMaterialFromTemplateSubject,
+  listMaterialsForTemplate,
 } from '../../../db/repositories/template-material-repository';
 import {
   listMaterials,
@@ -23,9 +24,8 @@ import {
   createScheduleBlock,
   deleteScheduleBlock,
   reorderScheduleBlock,
-  ensureEditableVersion,
+  getLatestScheduleVersion,
 } from '../../../db/repositories/schedule-repository';
-import { getTodayIso } from '../../../lib/date-iso';
 
 interface AdminStructureManagerProps {
   template: ScheduleTemplate | null;
@@ -54,8 +54,7 @@ export function AdminStructureManager(
       setSubjects(subjectsResult as any);
       setMaterials(materialsResult as any);
       if (template) {
-        const todayIso = getTodayIso();
-        const version = await ensureEditableVersion(template.id, todayIso);
+        const version = await getLatestScheduleVersion(template.id);
         if (!version) {
           setVersionId(null);
           setBlocks([]);
@@ -65,11 +64,16 @@ export function AdminStructureManager(
         setVersionId(version.id);
         const blockRows = await listBlocksForVersion(version.id);
         setBlocks(blockRows as any);
-        const subjectIds = Array.from(new Set((blockRows as any).map((b: any) => b.subjectId)));
+        const subjectIds = new Set((blockRows as any).map((b: any) => b.subjectId));
+        const allMaterials = await listMaterialsForTemplate(template.id);
         const mapping: Record<number, Array<{ materialId: number; materialName: string }>> = {};
-        for (const sid of subjectIds) {
-          const mats = await listTemplateSubjectMaterials(template.id, Number(sid));
-          mapping[Number(sid)] = mats as any;
+        for (const row of allMaterials as any) {
+          if (!subjectIds.has(row.subjectId)) continue;
+          if (!mapping[row.subjectId]) mapping[row.subjectId] = [];
+          mapping[row.subjectId].push({
+            materialId: row.materialId,
+            materialName: row.materialName,
+          });
         }
         setMaterialsBySubject(mapping);
       } else {

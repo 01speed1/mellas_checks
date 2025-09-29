@@ -154,9 +154,9 @@ export function ChecklistPage(): React.ReactElement {
               >
                 <input
                   type="checkbox"
-                  disabled={!editable}
+                  disabled={!editable || !hasMaterials}
                   checked={subjectAggregate[s.subjectId]?.checked || false}
-                  onChange={() => toggleSubject(s.subjectId)}
+                  onChange={() => hasMaterials && toggleSubject(s.subjectId)}
                   ref={(el) => {
                     if (el)
                       el.indeterminate = subjectAggregate[s.subjectId]?.indeterminate || false;
@@ -165,11 +165,7 @@ export function ChecklistPage(): React.ReactElement {
                 <button
                   type="button"
                   onClick={() => {
-                    if (hasMaterials) {
-                      toggleExpand(s.subjectId);
-                    } else if (editable) {
-                      toggleSubject(s.subjectId);
-                    }
+                    if (hasMaterials) toggleExpand(s.subjectId);
                   }}
                   aria-expanded={hasMaterials ? isOpen : undefined}
                   aria-controls={hasMaterials ? 'subject-panel-' + s.subjectId : undefined}
@@ -180,7 +176,7 @@ export function ChecklistPage(): React.ReactElement {
                     border: 'none',
                     padding: 0,
                     fontWeight: 600,
-                    cursor: editable ? 'pointer' : 'default',
+                    cursor: hasMaterials && editable ? 'pointer' : 'default',
                     opacity: !editable ? 0.6 : 1,
                   }}
                 >

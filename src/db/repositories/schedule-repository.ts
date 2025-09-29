@@ -206,3 +206,14 @@ export async function ensureEditableVersion(templateId: number, todayIso: string
   const cloned = await cloneScheduleVersionWithBlocks(active.id, todayIso);
   return cloned;
 }
+
+export async function getLatestScheduleVersion(templateId: number) {
+  const db = getDbClient();
+  const rows = await db
+    .select()
+    .from(scheduleVersion)
+    .where(eq(scheduleVersion.templateId, templateId))
+    .orderBy(desc(scheduleVersion.validFrom))
+    .limit(1);
+  return rows[0] || null;
+}
