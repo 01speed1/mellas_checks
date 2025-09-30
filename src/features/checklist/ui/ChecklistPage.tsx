@@ -1,5 +1,18 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { useChecklist } from '../state/useChecklist';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/8bit/card';
+import { Badge } from '@/components/ui/8bit/badge';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/8bit/accordion';
+import { Checkbox } from '@/components/ui/8bit/checkbox';
+
+import SkeletonLoading from '@/components/Skeleton-loading';
+import { AngleDown } from '@/components/icons/AngleDown';
+import { IconButton } from '@/components/ui/8bit/icon-button';
 
 export function ChecklistPage(): React.ReactElement {
   const childIdRaw = localStorage.getItem('activeChildId');
@@ -24,18 +37,21 @@ export function ChecklistPage(): React.ReactElement {
     const legacyKeys = ['activeChildIdentifier', 'activeScheduleIdentifier'];
     legacyKeys.forEach((k) => localStorage.removeItem(k));
   }, []);
+
   const phaseLabel = useMemo(() => {
     if (!phase) return '';
-    if (phase === 'pre_window') return 'Waiting (after 15:00 you can prepare)';
-    if (phase === 'prep_window') return 'Preparation window open';
-    if (phase === 'locked') return 'Locked (school time)';
-    return 'Afternoon preparation open';
+    if (phase === 'pre_window') return 'En espera (después de las 3:00 pm puedes preparar)';
+    if (phase === 'prep_window') return 'Ventana de preparación abierta';
+    if (phase === 'locked') return 'Bloqueado (horario escolar)';
+    return 'Preparación de tarde abierta';
   }, [phase]);
+
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   const [subjectOnlyRevision, setSubjectOnlyRevision] = useState(0);
   const toggleExpand = useCallback((subjectId: number) => {
     setExpanded((prev) => ({ ...prev, [subjectId]: !prev[subjectId] }));
   }, []);
+
   const lexicalSubjects = useMemo(() => {
     return subjects.map((s) => ({
       ...s,
@@ -44,10 +60,12 @@ export function ChecklistPage(): React.ReactElement {
       ),
     }));
   }, [subjects]);
+
   const totalMaterials = useMemo(
     () => lexicalSubjects.reduce((acc, s) => acc + s.materials.length, 0),
     [lexicalSubjects]
   );
+
   const subjectAggregate = useMemo(() => {
     const key = instanceId ? 'subjectOnlyStates:' + instanceId : null;
     let stored: Record<string, boolean> = {};
@@ -83,9 +101,11 @@ export function ChecklistPage(): React.ReactElement {
         stored = JSON.parse(localStorage.getItem(key) || '{}');
       } catch {}
     }
+
     const emptySubjects = lexicalSubjects
       .filter((s) => s.materials.length === 0)
       .map((s) => s.subjectId);
+
     const emptySubjectsAllChecked = emptySubjects.every((id) => !!stored[String(id)]);
     const anyRequirements = emptySubjects.length > 0 || totalMaterials > 0;
     const materialsAllChecked = items.length === 0 ? true : items.every((i) => i.checked);
@@ -117,114 +137,146 @@ export function ChecklistPage(): React.ReactElement {
     },
     [lexicalSubjects, subjectAggregate, toggle]
   );
+
   const showAllReady = readinessState.allReady;
+
   return (
-    <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <h1>Checklist</h1>
-      {templateName && <div style={{ fontSize: '1.05rem', fontWeight: 600 }}>{templateName}</div>}
-      {targetDateIso && <div>Target date: {targetDateIso}</div>}
-      {phase && (
-        <div style={{ fontSize: '.9rem', opacity: 0.85 }} aria-live="polite" aria-atomic="true">
-          {phaseLabel} {editable ? '' : '(read only)'}
-        </div>
-      )}
-      {loading && <div>Loading...</div>}
-      {error && (
-        <div style={{ color: '#b00', whiteSpace: 'pre-wrap' }}>
-          {error.replace(/Failed query:/, 'Error:').replace(/params:/, 'params:')}
-        </div>
-      )}
-      {showAllReady && <div style={{ color: 'green' }}>All ready</div>}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {lexicalSubjects.map((s) => {
-          const hasMaterials = s.materials.length > 0;
-          const isOpen = expanded[s.subjectId] || false;
-          return (
-            <div
-              key={s.subjectId}
-              style={{ border: '1px solid #ccc', borderRadius: 4, padding: '.5rem' }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  marginBottom: hasMaterials ? '.25rem' : 0,
-                }}
-              >
-                <input
-                  type="checkbox"
-                  disabled={!editable || !hasMaterials}
-                  checked={subjectAggregate[s.subjectId]?.checked || false}
-                  onChange={() => hasMaterials && toggleSubject(s.subjectId)}
-                  ref={(el) => {
-                    if (el)
-                      el.indeterminate = subjectAggregate[s.subjectId]?.indeterminate || false;
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (hasMaterials) toggleExpand(s.subjectId);
-                  }}
-                  aria-expanded={hasMaterials ? isOpen : undefined}
-                  aria-controls={hasMaterials ? 'subject-panel-' + s.subjectId : undefined}
-                  style={{
-                    flex: 1,
-                    textAlign: 'left',
-                    background: 'none',
-                    border: 'none',
-                    padding: 0,
-                    fontWeight: 600,
-                    cursor: hasMaterials && editable ? 'pointer' : 'default',
-                    opacity: !editable ? 0.6 : 1,
-                  }}
-                >
-                  {s.subjectName}{' '}
-                  {hasMaterials && <span style={{ fontSize: '.8rem' }}>{isOpen ? '▼' : '▶'}</span>}
-                </button>
-              </div>
-              {!hasMaterials && totalMaterials > 0 && (
-                <div style={{ opacity: 0.7 }}>No materials</div>
+    <>
+      {loading && <SkeletonLoading />}
+      {!loading && (
+        <div className="flex flex-col">
+          <Card className="mb-4">
+            <CardHeader>
+              <CardTitle>Checklist</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {templateName && (
+                <div className="font-semibold text-[1.05rem] mb-2">
+                  <small>Este es tu horario </small> {templateName}
+                </div>
               )}
-              {hasMaterials && isOpen && (
-                <ul
-                  id={'subject-panel-' + s.subjectId}
-                  style={{
-                    listStyle: 'none',
-                    padding: 0,
-                    margin: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '.25rem',
-                  }}
+              {targetDateIso && (
+                <div className="mb-4">Fecha de tu horario: {targetDateIso} / Mañana</div>
+              )}
+              {phase && (
+                <Badge
+                  className="text-black bg-green-500 text-[0.7rem] opacity-[0.85]"
+                  aria-live="polite"
+                  aria-atomic="true"
                 >
-                  {s.materials.map((m) => (
-                    <li
-                      key={m.materialId}
-                      style={{ display: 'flex', gap: 8, alignItems: 'center' }}
-                    >
-                      <label style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                        <input
-                          type="checkbox"
-                          disabled={!editable}
-                          checked={m.checked}
-                          onChange={() => toggle(s.subjectId, m.materialId)}
-                        />
-                        <span>{m.materialName}</span>
-                      </label>
-                    </li>
-                  ))}
-                </ul>
+                  {phaseLabel} {editable ? '' : '(read only)'}
+                </Badge>
+              )}
+              {showAllReady && (
+                <div className="mt-4 text-green-600 font-medium" aria-live="polite">
+                  All ready
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          <div className="flex flex-col gap-4">
+            {error && (
+              <div className="whitespace-pre-wrap text-red-700">
+                {error.replace(/Failed query:/, 'Error:').replace(/params:/, 'params:')}
+              </div>
+            )}
+            <div className="flex flex-col gap-4">
+              {lexicalSubjects.map((subject) => {
+                const hasMaterials = subject.materials.length > 0;
+                const subjectId = subject.subjectId;
+                const isOpen = expanded[subjectId] || false;
+                const accordionValue = isOpen ? String(subjectId) : '';
+                return (
+                  <Card key={subjectId} className="p-2 flex flex-col gap-2 press-ripple">
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        disabled={!editable}
+                        checked={subjectAggregate[subjectId]?.checked || false}
+                        onCheckedChange={() => toggleSubject(subjectId)}
+                        aria-checked={
+                          subjectAggregate[subjectId]?.indeterminate ? 'mixed' : undefined
+                        }
+                        ref={(el) => {
+                          if (el && 'querySelector' in el) {
+                            try {
+                              const inputElement = (el as unknown as HTMLElement).querySelector(
+                                'input'
+                              );
+                              if (inputElement) {
+                                (inputElement as HTMLInputElement).indeterminate =
+                                  subjectAggregate[subjectId]?.indeterminate || false;
+                              }
+                            } catch {}
+                          }
+                        }}
+                      />
+                      <div className="flex-1 flex flex-col gap-1 pt-1">
+                        <div className="font-semibold text-sm flex items-center justify-between">
+                          <span className={!editable ? 'opacity-60' : 'font-size-sm'}>
+                            {subject.subjectName}
+                          </span>
+                          {hasMaterials && (
+                            <IconButton
+                              onClick={() => toggleExpand(subjectId)}
+                              aria-expanded={isOpen}
+                              aria-controls={'subject-panel-' + subjectId}
+                              disabled={!editable}
+                              aria-label={isOpen ? 'Cerrar materiales' : 'Ver materiales'}
+                              className="transition-transform"
+                            >
+                              <AngleDown
+                                className={
+                                  'w-4 h-4 fill-current transform transition-transform duration-200 ' +
+                                  (isOpen ? 'rotate-180' : 'rotate-0')
+                                }
+                              />
+                            </IconButton>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    {hasMaterials && (
+                      <Accordion
+                        type="single"
+                        collapsible
+                        value={accordionValue}
+                        onValueChange={(val) => {
+                          setExpanded((prev) => ({
+                            ...prev,
+                            [subjectId]: val === String(subjectId),
+                          }));
+                        }}
+                        className="border-none"
+                      >
+                        <AccordionItem value={String(subjectId)} className="border-none">
+                          <AccordionContent id={'subject-panel-' + subjectId} className="pt-2">
+                            <ul className="flex flex-col gap-2 list-none m-0 p-0">
+                              {subject.materials.map((material) => (
+                                <li key={material.materialId} className="flex items-center gap-2">
+                                  <Checkbox
+                                    disabled={!editable}
+                                    checked={material.checked}
+                                    onCheckedChange={() => toggle(subjectId, material.materialId)}
+                                  />
+                                  <span className="text-sm">{material.materialName}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
+                    )}
+                  </Card>
+                );
+              })}
+              {lexicalSubjects.length === 0 && !loading && <div>No subjects</div>}
+              {totalMaterials === 0 && lexicalSubjects.length > 0 && !loading && (
+                <div className="text-sm opacity-70">No materials required</div>
               )}
             </div>
-          );
-        })}
-        {lexicalSubjects.length === 0 && !loading && <div>No subjects</div>}
-        {totalMaterials === 0 && lexicalSubjects.length > 0 && !loading && (
-          <div style={{ opacity: 0.7 }}>No materials required</div>
-        )}
-      </div>
-    </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

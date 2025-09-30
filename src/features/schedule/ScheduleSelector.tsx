@@ -17,17 +17,7 @@ import {
   CardContent,
   CardDescription,
 } from '@/components/ui/8bit/card';
-
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-  CommandShortcut,
-} from '@/components/ui/command';
+import { Badge } from '@/components/ui/8bit/badge';
 
 export function ScheduleSelector(): React.ReactElement {
   const navigate = useNavigate();
@@ -145,16 +135,6 @@ export function ScheduleSelector(): React.ReactElement {
     return '';
   }, [phase]);
 
-  const templatesList = templates.map((template) => ({
-    id: template.id,
-    value: template.name,
-    symbol: (isActive: boolean) => {
-      const className = isActive ? 'current' : '';
-
-      return <span>{template.name}</span>;
-    },
-  }));
-
   return (
     <>
       <Card>
@@ -178,30 +158,27 @@ export function ScheduleSelector(): React.ReactElement {
       {!loading && activeChildId == null && <div>Select a child first</div>}
       {!loading && templates.length === 0 && <div>No templates</div>}
 
-      {!loading && templates.length > 0 && (
-        <Command>
-          <CommandInput placeholder="buscar horario..." />
-          <CommandList>
-            <CommandEmpty>No hay horarios.</CommandEmpty>
-            <CommandGroup heading="Horarios">
-              {templates.map((template) => {
-                const isActive = template.id === activeTemplateId;
-                return (
-                  <CommandItem
-                    key={template.id}
-                    value={template.name}
-                    onSelect={() => handleSelect(template.id)}
-                    className={isActive ? 'font-bold' : ''}
-                  >
-                    {template.name}
-                    {isActive ? ' (current)' : ''}
-                  </CommandItem>
-                );
-              })}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      )}
+      {!loading &&
+        templates.length > 0 &&
+        templates.map((template) => {
+          const isActive = template.id === activeTemplateId;
+          const disabled = disableSelection && !isActive;
+          return (
+            <Card
+              key={template.id}
+              className={`press-ripple my-2`}
+              onClick={() => !disabled && handleSelect(template.id)}
+            >
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-lg flex-1">{template.name}</CardTitle>
+                {isActive && <Badge className="ml-2 bg-green-500 text-black">Seleccionado</Badge>}
+                {!isActive && disabled && (
+                  <Badge className="ml-2 bg-white text-black">Bloqueado</Badge>
+                )}
+              </CardHeader>
+            </Card>
+          );
+        })}
     </>
   );
 }

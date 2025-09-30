@@ -8,7 +8,7 @@ export function App(): React.ReactElement {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <div className="sm:mx-4 h-screen lg:m-auto lg:w-5/6">
-        <Card className="flex flex-row-reverse">
+        <Card className="flex flex-row-reverse mb-2">
           <div className="mr-4">
             <RetroModeSwitcher />
           </div>
