@@ -32,31 +32,24 @@ Create a simple habit that reduces forgotten items. Each afternoon (from 15:00 l
 
 ## Tech stack
 
-- Frontend: React + React Router + TypeScript (Vite).
-- Database: Turso (libSQL) via Drizzle ORM.
-- Styling: 8bitcn UI library; minimal local CSS modules when needed. No Tailwind.
-- Code: zero comments, descriptive English identifiers.
+- Frontend: React + React Router + TypeScript (Vite)
+- Backend: Fastify API (to be migrated into apps/server) exposing /api/v1
+- Database: Turso (libSQL) via Drizzle ORM (access only through backend once migration completes)
+- Styling: 8bitcn UI library; minimal local CSS modules when needed
+- Code: zero comments, descriptive English identifiers
 
 ## Project structure (current)
 
+Monorepo using pnpm workspaces. Frontend fully migrated to `apps/frontend`. Root `src/` removed.
+
 ```
-src/
-	app/
-	routes/
-	components/
-	features/
-		checklist/
-		schedule/
-		identity/
-	lib/
-	db/
-	types/
-	config/
-	styles/
-drizzle/
-	migrations/
-scripts/
-docs/
+apps/
+  server/            # Fastify API service
+  frontend/          # React + Vite application (mobile-first UI)
+drizzle/             # Database migrations
+scripts/             # Automation scripts
+docs/                # Additional documentation
+pnpm-workspace.yaml
 ```
 
 ## Checklist window logic
@@ -83,12 +76,26 @@ Central utility determines current phase (Prep, Locked, Next Cycle) and editabil
 - SubjectRequirement (pending integration into checklist)
 - AuditEvent (future analytics)
 
-## Variables de entorno (tentativas)
+## Environment variables
+
+Frontend (.env):
 
 ```
-VITE_TURSO_DATABASE_URL=
-VITE_TURSO_AUTH_TOKEN=
+VITE_API_BASE_URL=
 ```
+
+Backend (.env for apps/server):
+
+```
+TURSO_DATABASE_URL=
+TURSO_AUTH_TOKEN=
+SCHOOL_TIMEZONE=America/Bogota
+ALLOWED_ORIGIN=
+API_KEY=
+LOG_LEVEL=info
+```
+
+Deprecated (must not be reintroduced): VITE_TURSO_DATABASE_URL, VITE_TURSO_AUTH_TOKEN
 
 ## Release staging
 
@@ -110,41 +117,59 @@ Siguiente tarea: Definir esquema detallado de base de datos y migraciones inicia
 
 ## Local development
 
-Install dependencies and start dev server:
+Install dependencies:
 
 ```bash
 pnpm install
-pnpm dev
 ```
 
-Environment variables (`.env`):
+Start frontend (apps/frontend):
 
 ```bash
-VITE_TURSO_DATABASE_URL=""
-VITE_TURSO_AUTH_TOKEN=""
+pnpm --filter frontend dev
 ```
 
-Default dev URL: http://localhost:5173
-
-## Scripts disponibles
+Start backend (apps/server):
 
 ```bash
-pnpm dev       # Servidor desarrollo
-pnpm build     # Build producción
-pnpm preview   # Previsualizar build
-pnpm lint      # Linter
-pnpm typecheck # Verificar tipos
+pnpm --filter server dev
+```
 
-## SubjectRequirement (planned integration)
+Build frontend:
 
-Use cases:
-- One-off: Bring poster board on 2025-09-30.
-- Recurring: Bring reading notebook daily until resolved.
+```bash
+pnpm --filter frontend build
+```
 
-Rules:
-- With target_date: included only that day.
-- Without target_date and is_recurring=true: appears every day until resolved.
-- Resolving sets resolved_at and stops showing.
+Type check frontend:
 
-Integration: checklist generator will merge template snapshot materials plus open requirements grouped under each subject.
+```bash
+pnpm --filter frontend typecheck
+```
+
+Build all packages:
+
+```bash
+pnpm -r build
+```
+
+Frontend dev URL: http://localhost:5173
+API dev base URL: http://localhost:3000/api/v1
+
+## Workspace scripts quick reference
+
+```bash
+pnpm --filter frontend dev       # Frontend dev
+pnpm --filter server dev         # Backend dev
+pnpm -r build                    # Build all
+pnpm --filter frontend preview   # Preview frontend build
+pnpm --filter frontend typecheck # Type check frontend
+```
+
+## SubjectRequirement (planned)
+
+Future: merge per-subject requirements (one-off or recurring) into derived checklist. Not implemented yet.
+
+```
+
 ```

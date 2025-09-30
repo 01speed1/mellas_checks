@@ -1,0 +1,7 @@
+.retro {
+  image-rendering: pixelated;
+  font-family: var(--font-retro, monospace);
+}
+.font-retro {
+  font-family: var(--font-retro, monospace);
+}

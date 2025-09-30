@@ -7,13 +7,28 @@ Provide technical project context and coding guidelines. Business domain logic a
 Primary Goal: Mobile‑first web application for two sisters to prepare for the next school day by selecting the next day's schedule and completing a materials checklist inside an allowed time window.
 Primary Stack:
 
-- Frontend: React (latest) with React Router.
-- Build tool: Vite (React + TypeScript template) unless explicitly changed later.
-  Styling: 8bitcn UI library (https://www.8bitcn.com/docs) for consistent retro themed components. Tailwind CSS is permitted only as the utility layer required by 8bitcn provided components. No additional third-party global styling frameworks (Bootstrap, Material UI) are allowed. Hand authored utility proliferation should be avoided; prefer semantic class names in local CSS when a pattern is not covered by 8bitcn.
-  Custom CSS rules must live in standalone `.css` files (either `src/styles/` global or feature-local `styles/` folder) using class names; avoid large inline style objects except for ultra-local one-off layout tweaks. Keep each CSS file focused and small. Tailwind setup (config, base layer import) must remain minimal and only include what 8bitcn components depend on.
-- State management: Prefer local component state and lightweight custom hooks. Introduce a library (e.g. Zustand) only if complexity grows (multi-page shared state + persistence) and after explicit approval.
-- Database: Turso (libSQL). Accessed through a thin data layer abstraction. No direct SQL scattered through UI components.
-- Deployment: To be defined (suggest Netlify / Vercel for frontend; Turso handles DB). Avoid deployment-specific code until environment strategy is confirmed.
+Frontend:
+React (latest) with React Router.
+Build tool: Vite (React + TypeScript template) unless explicitly changed later.
+Styling: 8bitcn UI library (https://www.8bitcn.com/docs) for consistent retro themed components. Tailwind CSS is permitted only a-s the utility layer required by 8bitcn provided components. No additional third-party global styling frameworks (Bootstrap, Material UI) are allowed. Hand authored utility proliferation should be avoided; prefer semantic class names in local CSS when a pattern is not covered by 8bitcn.
+Custom CSS rules must live in standalone `.css` files (either `src/styles/` global or feature-local `styles/` folder) using class names; avoid large inline style objects except for ultra-local one-off layout tweaks. Keep each CSS file focused and small. Tailwind setup (config, base layer import) must remain minimal and only include what 8bitcn components depend on.
+
+Backend API:
+Fastify (Node 20+) service hosted separately. Provides all data access and domain logic endpoints. Frontend must never embed Turso credentials.
+Layered structure: config, db client singleton, repositories, services (domain logic), routes, optional schemas.
+Versioned base path /api/v1/ for forward compatibility.
+
+Database:
+Turso (libSQL). Access only from backend. Frontend performs fetch calls to API only.
+
+State Management:
+Prefer local component state and lightweight custom hooks. Introduce a global state library only with explicit approval.
+
+Deployment:
+Render Static Site: serves built frontend.
+Render Web Service: Fastify API service.
+Turso: managed database. Token scoped to required permissions and stored only in backend environment variables.
+See infrastructure.instructions.md for operational details.
 
 Language & Comment Rules (STRICT):
 
@@ -71,15 +86,36 @@ Routing Guidelines:
 
 Data Layer Technical Principles:
 
-- Use a single lightweight DB client module (libSQL via Turso) exposing prepared helpers.
-- Provide repository functions only; forbid raw SQL in React components.
-- All data functions return typed objects.
+Frontend:
+No direct SQL or Turso client usage. Only uses fetch against the backend API. No VITE*TURSO*\* variables allowed.
 
-Environment Variables (proposed):
+Backend:
+Single Turso client singleton module (libSQL) reused across repositories.
+Repository modules contain SQL and map rows to typed domain objects.
+Service layer enforces business invariants (snapshot immutability, unique checklist instance, time window logic) and composes repositories.
+Routes remain thin, delegating to services and formatting responses.
+Return JSON using camelCase keys and ISO 8601 timestamps.
+Do not leak internal identifiers (e.g. scheduleVersionId) to clients.
 
-- `VITE_TURSO_DATABASE_URL`
-- `VITE_TURSO_AUTH_TOKEN`
-- Never commit real credentials; provide `.env.example` with placeholders.
+Environment Variables:
+
+Frontend (public):
+`VITE_API_BASE_URL` Base URL for the backend API (e.g. https://mellas-api.onrender.com/api/v1).
+
+Backend (private):
+`TURSO_DATABASE_URL` Turso database URL.
+`TURSO_AUTH_TOKEN` Turso auth token (rotated when moving credentials off frontend).
+`SCHOOL_TIMEZONE` IANA timezone used for phase calculations (e.g. America/Mexico_City).
+`ALLOWED_ORIGIN` Exact origin for CORS (frontend site URL).
+`API_KEY` Optional shared secret header value (x-internal-key) when enabled.
+`LOG_LEVEL` Optional Fastify log level (info by default).
+`PORT` Provided by Render at runtime.
+
+Deprecated (must not reappear in codebase):
+`VITE_TURSO_DATABASE_URL`
+`VITE_TURSO_AUTH_TOKEN`
+
+`.env.example` must list only currently supported variables grouped by frontend/backend.
 
 Database Reference:
 
@@ -103,8 +139,7 @@ Performance & Accessibility:
 
 Security & Privacy:
 
-- Do not store secrets client-side beyond Turso public auth token (if applicable). If secure backend needed later, introduce it explicitly.
-- Avoid PII beyond first names already defined.
+Secrets only reside in backend environment (Render). Frontend never embeds database credentials. All data mutations occur through authenticated (or controlled) API routes. Avoid PII beyond first names already defined.
 
 Version Control & Commits:
 
@@ -124,6 +159,71 @@ Package Management:
 - Use `pnpm install`, `pnpm add`, `pnpm remove` for dependency changes.
 - Scripts are executed with `pnpm <script>` (example: `pnpm dev`).
 - Do not commit `node_modules`.
+
+Monorepo And pnpm Workspaces:
+
+Goal: Host frontend and backend (server) in a single repository with clean dependency boundaries and reproducible installs.
+
+Workspace Root:
+Root `package.json` marked `private: true` and defines `workspaces` array.
+Recommended layout:
+root/
+package.json (workspaces)
+pnpm-lock.yaml
+apps/
+frontend/ (current React app moved here when refactor happens)
+server/ (Fastify API)
+shared/ (optional future shared utilities package)
+
+Interim Phase:
+Until frontend is moved, server/ can be added alongside existing root. Later migrate frontend into apps/frontend to align with standard layout. Document the migration in a commit message.
+
+Workspace Rules:
+Frontend must not import server code directly.
+Server must not import frontend components.
+Shared reusable pure utilities (date helpers, types) live in a dedicated workspace package (e.g. shared/) consumed via `workspace:*` version spec.
+No deep relative imports that escape package boundaries (../../server/src). Use workspace dependency instead.
+
+Dependency Management:
+Shared dev tooling (eslint, prettier, typescript) installed at root when possible.
+Runtime dependencies specific to a package declared in that package's own package.json.
+Use `pnpm add <dep> --filter <package>` to scope additions.
+Use `workspace:*` range for internal shared packages (example: `"@mellas/shared": "workspace:*"`).
+
+Scripts Conventions:
+frontend: dev, build, preview
+server: dev (watch), build (tsc output), start (node dist/index.js)
+Root convenience scripts can proxy: `"dev:frontend": "pnpm --filter frontend dev"`.
+
+Common Commands:
+Install all: `pnpm install`
+Build all: `pnpm -r build`
+Run only server: `pnpm --filter server dev`
+Add dependency to server: `pnpm add fastify --filter server`
+Update shared dependency everywhere: `pnpm up <name> -r`
+
+TypeScript Coordination:
+Prefer each package with its own tsconfig.json extending a root base tsconfig.base.json for consistent compiler options.
+Do not reference source files across packages; import compiled output or leverage `composite` + `references` only if build orchestration becomes necessary.
+
+Publishing And Versioning:
+No external publishing required; workspace internal versions stay at 0.0.0 or private until a distribution need emerges.
+
+CI / Deployment Considerations:
+Backend deployment step installs root and runs `pnpm --filter server build` then starts server.
+Frontend static deploy step runs `pnpm --filter frontend build` and serves resulting dist.
+Avoid running full repo build when only one package changed (future optimization via filter on changed files).
+
+Enforcement:
+Periodically run `pnpm list --depth -1` inside each package to confirm absence of unintended duplicates.
+Add lint rule or script to guard against relative path cross-package imports.
+
+Migration Steps To Adopt Workspaces (Planned):
+1 Add root workspaces config referencing existing root (frontend placeholder) and new server/.
+2 Create server package with its own package.json.
+3 Move frontend into apps/frontend when convenient; adjust build scripts and deployment paths.
+4 Introduce shared package only when at least two packages require the same code.
+5 Update .env.example sections per package.
 
 Code Style:
 
@@ -145,11 +245,17 @@ AI Assistant Usage Rules:
 
 Non-Negotiable Constraints Summary:
 
-1. React + React Router.
-2. Turso for data persistence.
-3. 100% English identifiers & commits.
-4. Zero code comments of any form.
+1. React + React Router frontend isolated from persistence.
+2. Turso accessed only through backend service.
+3. 100% English identifiers and commit messages.
+4. Zero code comments of any form in source code.
 5. Descriptive names (no single letters, no unexplained acronyms).
+6. No reintroduction of direct DB access in frontend.
+
+Cross Reference:
+business.instructions.md domain rules
+infrastructure.instructions.md operational and deployment rules
+api.instructions.md API structure and endpoint governance
 
 Reference:
 

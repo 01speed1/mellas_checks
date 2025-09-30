@@ -1,0 +1,6 @@
+html.retro button, html.retro a {
+  transition: transform 0.12s;
+}
+html.retro button:active, html.retro a:active {
+  transform: translateY(2px);
+}
