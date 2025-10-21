@@ -101,6 +101,14 @@ services:
         value: https://mellas-api.onrender.com/api/v1
 ```
 
+**Important:** The frontend includes a `_redirects` file in `apps/frontend/public/` that ensures all routes are handled by React Router. This file is automatically copied to the `dist` directory during build and contains:
+
+```
+/* /index.html 200
+```
+
+This configuration tells Render to serve `index.html` for all routes, enabling client-side routing for the SPA.
+
 #### Backend (Web Service)
 
 ```yaml
