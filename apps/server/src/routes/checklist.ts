@@ -42,16 +42,19 @@ export async function checklistRoutes(app: FastifyInstance) {
 
   app.get('/checklist', async (request, reply) => {
     const childId = Number((request.query as any).childId);
+
     if (!childId)
       return reply.code(400).send({ error: 'validation_error', message: 'childId required' });
     const env = loadEnv();
     const phaseResult = computePhase(new Date(), env.SCHOOL_TIMEZONE);
+
     try {
       const result = await loadChecklist(childId, phaseResult.targetDateISO);
       if (!result)
         return reply.code(404).send({ error: 'not_found', message: 'Checklist not found' });
       return { phase: phaseResult.phase, editable: phaseResult.editable, ...result };
-    } catch {
+    } catch (e) {
+      console.error('Error loading checklist', e);
       return reply.code(500).send({ error: 'internal_error', message: 'Unexpected error' });
     }
   });

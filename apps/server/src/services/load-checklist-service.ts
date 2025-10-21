@@ -1,15 +1,18 @@
 import { getChecklistInstance, listItemStates } from '../repositories/checklist-repository';
-import { listBlocks, getTemplate } from '../repositories/schedule-repository';
+import { listBlocks, getTemplate, getVersion } from '../repositories/schedule-repository';
 import { listTemplateSubjectMaterials } from '../repositories/template-materials-repository';
 import { getMaterialsByIds } from '../repositories/materials-repository';
 
 export async function loadChecklist(childId: number, targetDateIso: string) {
   const instance = await getChecklistInstance(childId, targetDateIso);
   if (!instance) return undefined;
-  const template = await getTemplate(instance.scheduleVersionId ? NaN : NaN); // placeholder not used; template id not directly known from version without join
+  const version = await getVersion(instance.scheduleVersionId);
+  if (!version) return undefined;
+  const template = await getTemplate(version.templateId);
+  if (!template) return undefined;
   const blocks = await listBlocks(instance.scheduleVersionId);
   const subjectIds = blocks.map((b) => b.subjectId);
-  const links = await listTemplateSubjectMaterials(template ? template.id : 0, subjectIds);
+  const links = await listTemplateSubjectMaterials(template.id, subjectIds);
   const materialIds = Array.from(new Set(links.map((l) => l.materialId)));
   const materials = await getMaterialsByIds(materialIds);
   const materialNameMap = new Map(materials.map((m) => [m.id, m.name]));
@@ -46,6 +49,7 @@ export async function loadChecklist(childId: number, targetDateIso: string) {
   return {
     checklistInstanceId: instance.id,
     targetDateISO: targetDateIso,
+    template: { id: template.id, name: template.name },
     subjects,
     aggregates: { total, checked, allReady },
   };

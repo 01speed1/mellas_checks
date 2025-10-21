@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { getDrizzle } from '../db/drizzle-client';
 import { checklistInstance, checklistItemState } from '../db/schema';
 
@@ -30,8 +30,9 @@ export async function getChecklistInstance(
       scheduleVersionId: checklistInstance.scheduleVersionId,
     })
     .from(checklistInstance)
-    .where(eq(checklistInstance.childId, childId))
-    .where(eq(checklistInstance.targetDate, targetDateIso))
+    .where(
+      and(eq(checklistInstance.childId, childId), eq(checklistInstance.targetDate, targetDateIso))
+    )
     .limit(1);
   const row = rows[0];
   if (!row) return undefined;

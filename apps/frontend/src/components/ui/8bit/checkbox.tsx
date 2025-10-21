@@ -1,23 +1,23 @@
-import * as React from 'react';
+import * as React from "react";
 
-import * as CheckboxPrimitive from '@radix-ui/react-checkbox';
-import { type VariantProps, cva } from 'class-variance-authority';
+import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
+import { type VariantProps, cva } from "class-variance-authority";
 
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 
-import { Checkbox as ShadcnCheckbox } from '@/components/ui/checkbox';
+import { Checkbox as ShadcnCheckbox } from "@/components/ui/checkbox";
 
-import './styles/retro.css';
+import "./styles/retro.css";
 
-export const checkboxVariants = cva('', {
+export const checkboxVariants = cva("", {
   variants: {
     font: {
-      normal: '',
-      retro: 'retro',
+      normal: "",
+      retro: "retro",
     },
   },
   defaultVariants: {
-    font: 'retro',
+    font: "retro",
   },
 });
 
@@ -31,14 +31,14 @@ function Checkbox({ className, font, ...props }: BitCheckboxProps) {
   return (
     <div
       className={cn(
-        'relative flex items-center justify-center border-y-6 border-foreground dark:border-ring',
+        "relative flex items-center justify-center border-y-6 border-foreground dark:border-ring",
         className
       )}
     >
       <ShadcnCheckbox
         className={cn(
-          'rounded-none size-5 ring-0 border-none',
-          font !== 'normal' && 'retro',
+          "rounded-none size-5 ring-0 border-none",
+          font !== "normal" && "retro",
           className
         )}
         {...props}

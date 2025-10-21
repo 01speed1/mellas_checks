@@ -1,27 +1,11 @@
-import { ReactNode, useEffect, useState } from 'react';
+import * as React from 'react';
 
-interface ThemeProviderProps {
-  children: ReactNode;
-  defaultTheme?: string;
-  storageKey?: string;
+import { ThemeProvider as NextThemesProvider } from 'next-themes';
+
+type ThemeProviderProps = React.ComponentProps<typeof NextThemesProvider> & {
+  children: React.ReactNode;
+};
+
+export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
+  return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
 }
-
-function ThemeProvider({
-  children,
-  defaultTheme = 'light',
-  storageKey = 'app-theme',
-}: ThemeProviderProps) {
-  const [theme, setTheme] = useState<string>(defaultTheme);
-  useEffect(() => {
-    const stored = localStorage.getItem(storageKey);
-    if (stored) setTheme(stored);
-  }, [storageKey]);
-  useEffect(() => {
-    document.documentElement.classList.remove('light', 'dark');
-    document.documentElement.classList.add(theme);
-    localStorage.setItem(storageKey, theme);
-  }, [theme, storageKey]);
-  return <>{children}</>;
-}
-
-export { ThemeProvider };

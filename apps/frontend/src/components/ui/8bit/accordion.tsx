@@ -1,61 +1,93 @@
-import * as AccordionPrimitive from '@radix-ui/react-accordion';
-import * as React from 'react';
+"use client";
 
-import { ChevronDownIcon } from '@radix-ui/react-icons';
+import * as React from "react";
 
-import { cn } from '@/lib/utils';
+import * as AccordionPrimitive from "@radix-ui/react-accordion";
 
-import './styles/retro.css';
+import { cn } from "@/lib/utils";
 
-const Accordion = AccordionPrimitive.Root;
+import {
+  Accordion as ShadcnAccordion,
+  AccordionContent as ShadcnAccordionContent,
+  AccordionItem as ShadcnAccordionItem,
+  AccordionTrigger as ShadcnAccordionTrigger,
+} from "@/components/ui/accordion";
 
-const AccordionItem = React.forwardRef<
-  React.ElementRef<typeof AccordionPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Item>
->(({ className, ...props }, ref) => (
-  <AccordionPrimitive.Item
-    ref={ref}
-    className={cn('border-b retro font-retro', className)}
-    {...props}
-  />
-));
-AccordionItem.displayName = 'AccordionItem';
+import "./styles/retro.css";
 
-const AccordionTrigger = React.forwardRef<
-  React.ElementRef<typeof AccordionPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger>
->(({ className, children, ...props }, ref) => (
-  <AccordionPrimitive.Header className="flex">
-    <AccordionPrimitive.Trigger
-      ref={ref}
+export interface BitAccordionItemProps
+  extends React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Item> {
+  asChild?: boolean;
+}
+
+function AccordionItem({
+  className,
+  children,
+  ...props
+}: BitAccordionItemProps) {
+  return (
+    <ShadcnAccordionItem
       className={cn(
-        'flex flex-1 items-center justify-between py-4 font-retro transition-all [&[data-state=open]>svg]:rotate-180 border-t border-border',
+        "border-dashed border-b-4 border-foreground dark:border-ring relative",
         className
       )}
       {...props}
     >
       {children}
-      <ChevronDownIcon className="h-4 w-4 shrink-0 text-foreground/70 transition-transform duration-200" />
-    </AccordionPrimitive.Trigger>
-  </AccordionPrimitive.Header>
-));
-AccordionTrigger.displayName = AccordionPrimitive.Trigger.displayName;
+    </ShadcnAccordionItem>
+  );
+}
 
-const AccordionContent = React.forwardRef<
-  React.ElementRef<typeof AccordionPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-  <AccordionPrimitive.Content
-    ref={ref}
-    className={cn(
-      'overflow-hidden text-sm data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down',
-      className
-    )}
-    {...props}
-  >
-    <div className="pb-4 pt-0">{children}</div>
-  </AccordionPrimitive.Content>
-));
-AccordionContent.displayName = AccordionPrimitive.Content.displayName;
+export interface BitAccordionTriggerProps
+  extends React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger> {
+  font?: "normal" | "retro";
+}
+
+function AccordionTrigger({
+  className,
+  children,
+  font,
+  ...props
+}: BitAccordionTriggerProps) {
+  return (
+    <ShadcnAccordionTrigger
+      className={cn(font !== "normal" && "retro", className)}
+      {...props}
+    >
+      {children}
+    </ShadcnAccordionTrigger>
+  );
+}
+
+export interface BitAccordionContentProps
+  extends React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Content> {
+  font?: "normal" | "retro";
+}
+
+function AccordionContent({
+  className,
+  children,
+  font,
+  ...props
+}: BitAccordionContentProps) {
+  return (
+    <div className="relative">
+      <ShadcnAccordionContent
+        className={cn(
+          "overflow-hidden text-sm data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down",
+          font !== "normal" && "retro",
+          className
+        )}
+        {...props}
+      >
+        <div className="pb-4 pt-0 relative z-10 p-1">{children}</div>
+      </ShadcnAccordionContent>
+
+      <AccordionPrimitive.Content asChild forceMount />
+    </div>
+  );
+}
+
+const Accordion = ShadcnAccordion;
 
 export { Accordion, AccordionItem, AccordionTrigger, AccordionContent };

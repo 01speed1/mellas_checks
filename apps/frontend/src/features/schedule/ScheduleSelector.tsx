@@ -1,14 +1,13 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { listScheduleTemplates } from '../../db/repositories/schedule-repository';
+import { fetchTemplatesByChild, type TemplateDto } from './api/templates-service';
 import {
-  ensureScheduleVersionForDate,
-  resetChecklistInstanceForReselection,
-} from '../checklist/api/snapshot-instance-service';
-import { getTomorrowIso, getTodayIso } from '../../lib/date-iso';
+  ensureChecklistForTemplate,
+  reselectChecklistTemplate,
+} from '../checklist/api/checklist-api-service';
+import { getTomorrowIso, getTodayIso, formatDateForDisplay } from '../../lib/date-iso';
 import { evaluateStoredCycle } from '../../lib/cycle-phase';
 import { purgeCycleState } from '../../lib/cycle-state';
-import { ScheduleTemplate } from '../../db/types';
 
 import {
   Card,
@@ -21,7 +20,7 @@ import { Badge } from '@/components/ui/8bit/badge';
 
 export function ScheduleSelector(): React.ReactElement {
   const navigate = useNavigate();
-  const [templates, setTemplates] = useState<ScheduleTemplate[]>([]);
+  const [templates, setTemplates] = useState<TemplateDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [phase, setPhase] = useState<string | null>(null);
@@ -61,14 +60,14 @@ export function ScheduleSelector(): React.ReactElement {
       };
     }
     setLoading(true);
-    listScheduleTemplates(activeChildId)
+    fetchTemplatesByChild(activeChildId)
       .then((rows) => {
         if (!active) return;
         const parseDay = (name: string) => {
           const match = name.match(/Día\s+(\d+)/i);
           return match ? Number(match[1]) : 999;
         };
-        const ordered = [...(rows as ScheduleTemplate[])].sort((a, b) => {
+        const ordered = [...rows].sort((a, b) => {
           const da = parseDay(a.name);
           const db = parseDay(b.name);
           if (da !== db) return da - db;
@@ -76,7 +75,8 @@ export function ScheduleSelector(): React.ReactElement {
         });
         setTemplates(ordered);
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error('Error loading templates', error);
         if (active) setErrorMessage('Failed loading templates');
       })
       .finally(() => {
@@ -101,23 +101,30 @@ export function ScheduleSelector(): React.ReactElement {
       localStorage.removeItem('activeTargetDate');
     }
     const tomorrowIso = getTomorrowIso();
-    const version = await ensureScheduleVersionForDate(templateId, tomorrowIso);
-    if (!version) return;
     const evalResult = evaluateStoredCycle(tomorrowIso);
     const previousTemplate = localStorage.getItem('activeTemplateId');
-    if (
-      previousTemplate &&
-      Number(previousTemplate) !== templateId &&
-      evalResult.phase === 'prep_window'
-    ) {
-      await resetChecklistInstanceForReselection(childId, tomorrowIso, version.id);
+    try {
+      let response;
+      if (
+        previousTemplate &&
+        Number(previousTemplate) !== templateId &&
+        evalResult.phase === 'prep_window'
+      ) {
+        response = await reselectChecklistTemplate(childId, templateId);
+      } else {
+        response = await ensureChecklistForTemplate(childId, templateId);
+      }
+      const targetDateOnly = response.targetDateISO.split('T')[0];
+      localStorage.setItem('activeTemplateId', String(templateId));
+      localStorage.setItem('activeTargetDate', targetDateOnly);
+      setActiveTemplateId(templateId);
+      setTargetDateIso(targetDateOnly);
+      setPhase(response.phase);
+      navigate('/checklist');
+    } catch (error) {
+      console.error('Error selecting template', error);
+      setErrorMessage('Failed to select template');
     }
-    localStorage.setItem('activeTemplateId', String(templateId));
-    localStorage.setItem('activeTargetDate', tomorrowIso);
-    setActiveTemplateId(templateId);
-    setTargetDateIso(tomorrowIso);
-    setPhase(evalResult.phase);
-    navigate('/checklist');
   }
 
   const disableSelection = useMemo(() => {
@@ -135,6 +142,13 @@ export function ScheduleSelector(): React.ReactElement {
     return '';
   }, [phase]);
 
+  const selectedTemplateName = useMemo(() => {
+    if (!activeTemplateId) return 'Selecciona un horario';
+    if (loading) return 'Cargando...';
+    const template = templates.find((t) => Number(t.id) === Number(activeTemplateId));
+    return template?.name || 'Unknown';
+  }, [activeTemplateId, templates, loading]);
+
   return (
     <>
       <Card>
@@ -144,11 +158,8 @@ export function ScheduleSelector(): React.ReactElement {
         </CardHeader>
         {activeTemplateId && targetDateIso && (
           <CardContent>
-            <p>
-              horario seleccionado:
-              {templates.find((t) => t.id === activeTemplateId)?.name || 'Unknown'}
-            </p>
-            <p> Fecha de tu horario: {targetDateIso}</p>
+            <p>horario seleccionado: {selectedTemplateName}</p>
+            <p> Fecha de tu horario: {formatDateForDisplay(targetDateIso)}</p>
           </CardContent>
         )}
       </Card>
@@ -161,7 +172,7 @@ export function ScheduleSelector(): React.ReactElement {
       {!loading &&
         templates.length > 0 &&
         templates.map((template) => {
-          const isActive = template.id === activeTemplateId;
+          const isActive = Number(template.id) === Number(activeTemplateId);
           const disabled = disableSelection && !isActive;
           return (
             <Card

@@ -100,3 +100,17 @@ export async function getTemplate(templateId: number) {
     .limit(1);
   return rows[0];
 }
+
+export async function getVersion(versionId: number) {
+  const db = getDrizzle();
+  const rows = await db
+    .select({
+      id: scheduleVersion.id,
+      templateId: scheduleVersion.templateId,
+      validFrom: scheduleVersion.validFrom,
+    })
+    .from(scheduleVersion)
+    .where(eq(scheduleVersion.id, versionId))
+    .limit(1);
+  return rows[0] as ScheduleVersionRow | undefined;
+}

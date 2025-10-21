@@ -1,37 +1,27 @@
 import React, { useMemo, useState, useCallback } from 'react';
-import { useChecklist } from '../state/useChecklist';
+import { useChecklistApi } from '../state/useChecklistApi';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/8bit/card';
 import { Badge } from '@/components/ui/8bit/badge';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/8bit/accordion';
 import { Checkbox } from '@/components/ui/8bit/checkbox';
+import { formatDateForDisplay } from '@/lib/date-iso';
 
 import SkeletonLoading from '@/components/Skeleton-loading';
-import { AngleDown } from '@/components/icons/AngleDown';
-import { IconButton } from '@/components/ui/8bit/icon-button';
 
 export function ChecklistPage(): React.ReactElement {
   const childIdRaw = localStorage.getItem('activeChildId');
-  const templateIdRaw = localStorage.getItem('activeTemplateId');
-  const targetDateIso = localStorage.getItem('activeTargetDate');
   const childId = childIdRaw ? Number(childIdRaw) : null;
-  const templateId = templateIdRaw ? Number(templateIdRaw) : null;
   const {
     loading,
     error,
     items,
-    allComplete,
     toggle,
     editable,
     subjects,
     templateName,
     phase,
     instanceId,
-  } = useChecklist(childId, templateId, targetDateIso);
+    targetDateIso,
+  } = useChecklistApi(childId);
 
   React.useEffect(() => {
     const legacyKeys = ['activeChildIdentifier', 'activeScheduleIdentifier'];
@@ -46,11 +36,7 @@ export function ChecklistPage(): React.ReactElement {
     return 'Preparación de tarde abierta';
   }, [phase]);
 
-  const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   const [subjectOnlyRevision, setSubjectOnlyRevision] = useState(0);
-  const toggleExpand = useCallback((subjectId: number) => {
-    setExpanded((prev) => ({ ...prev, [subjectId]: !prev[subjectId] }));
-  }, []);
 
   const lexicalSubjects = useMemo(() => {
     return subjects.map((s) => ({
@@ -132,9 +118,9 @@ export function ChecklistPage(): React.ReactElement {
       }
       const agg = subjectAggregate[subjectId];
       const shouldCheck = !(agg && agg.checked);
-      target.materials.forEach((m) => toggle(subjectId, m.materialId));
+      target.materials.forEach((m) => toggle(m.checklistItemId, subjectId, m.materialId));
     },
-    [lexicalSubjects, subjectAggregate, toggle]
+    [lexicalSubjects, subjectAggregate, toggle, instanceId, editable]
   );
 
   const showAllReady = readinessState.allReady;
@@ -155,7 +141,9 @@ export function ChecklistPage(): React.ReactElement {
                 </div>
               )}
               {targetDateIso && (
-                <div className="mb-4">Fecha de tu horario: {targetDateIso} / Mañana</div>
+                <div className="mb-4">
+                  Fecha de tu horario: {formatDateForDisplay(targetDateIso)}
+                </div>
               )}
               {phase && (
                 <Badge
@@ -183,11 +171,15 @@ export function ChecklistPage(): React.ReactElement {
               {lexicalSubjects.map((subject) => {
                 const hasMaterials = subject.materials.length > 0;
                 const subjectId = subject.subjectId;
-                const isOpen = expanded[subjectId] || false;
-                const accordionValue = isOpen ? String(subjectId) : '';
+                const allChecked = hasMaterials 
+                  ? subjectAggregate[subjectId]?.checked 
+                  : subjectAggregate[subjectId]?.checked || false;
                 return (
-                  <Card key={subjectId} className="p-2 flex flex-col gap-2 press-ripple">
-                    <div className="flex items-start gap-3">
+                  <Card 
+                    key={subjectId} 
+                    className={`p-4 flex flex-col gap-3 press-ripple ${allChecked ? 'bg-green-500/20' : ''}`}
+                  >
+                    <div className="flex items-start gap-4">
                       <Checkbox
                         disabled={!editable}
                         checked={subjectAggregate[subjectId]?.checked || false}
@@ -210,67 +202,40 @@ export function ChecklistPage(): React.ReactElement {
                         }}
                       />
                       <div className="flex-1 flex flex-col gap-1 pt-1">
-                        <div className="font-semibold text-sm flex items-center justify-between">
-                          <span className={!editable ? 'opacity-60' : 'font-size-sm'}>
+                        <div className="font-semibold text-base flex items-center justify-between">
+                          <span className={!editable ? 'opacity-60' : ''}>
                             {subject.subjectName}
                           </span>
-                          {hasMaterials && (
-                            <IconButton
-                              onClick={() => toggleExpand(subjectId)}
-                              aria-expanded={isOpen}
-                              aria-controls={'subject-panel-' + subjectId}
-                              disabled={!editable}
-                              aria-label={isOpen ? 'Cerrar materiales' : 'Ver materiales'}
-                              className="transition-transform"
-                            >
-                              <AngleDown
-                                className={
-                                  'w-4 h-4 fill-current transform transition-transform duration-200 ' +
-                                  (isOpen ? 'rotate-180' : 'rotate-0')
-                                }
-                              />
-                            </IconButton>
-                          )}
                         </div>
                       </div>
                     </div>
                     {hasMaterials && (
-                      <Accordion
-                        type="single"
-                        collapsible
-                        value={accordionValue}
-                        onValueChange={(val) => {
-                          setExpanded((prev) => ({
-                            ...prev,
-                            [subjectId]: val === String(subjectId),
-                          }));
-                        }}
-                        className="border-none"
-                      >
-                        <AccordionItem value={String(subjectId)} className="border-none">
-                          <AccordionContent id={'subject-panel-' + subjectId} className="pt-2">
-                            <ul className="flex flex-col gap-2 list-none m-0 p-0">
-                              {subject.materials.map((material) => (
-                                <li key={material.materialId} className="flex items-center gap-2">
-                                  <Checkbox
-                                    disabled={!editable}
-                                    checked={material.checked}
-                                    onCheckedChange={() => toggle(subjectId, material.materialId)}
-                                  />
-                                  <span className="text-sm">{material.materialName}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </AccordionContent>
-                        </AccordionItem>
-                      </Accordion>
+                      <div className="mt-2 pl-8">
+                        <ul className="flex flex-col gap-3 list-none m-0 p-0">
+                          {subject.materials.map((material) => (
+                            <li 
+                              key={material.materialId} 
+                              className={`flex items-center gap-3 p-3 rounded ${material.checked ? 'bg-green-500/10' : ''}`}
+                            >
+                              <Checkbox
+                                disabled={!editable}
+                                checked={material.checked}
+                                onCheckedChange={() =>
+                                  toggle(material.checklistItemId, subjectId, material.materialId)
+                                }
+                              />
+                              <span className="text-base">{material.materialName}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     )}
                   </Card>
                 );
               })}
               {lexicalSubjects.length === 0 && !loading && <div>No subjects</div>}
               {totalMaterials === 0 && lexicalSubjects.length > 0 && !loading && (
-                <div className="text-sm opacity-70">No materials required</div>
+                <div className="text-base opacity-70">No materials required</div>
               )}
             </div>
           </div>
