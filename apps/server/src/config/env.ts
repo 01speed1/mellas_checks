@@ -8,6 +8,7 @@ interface Env {
   API_KEY?: string;
   LOG_LEVEL?: string;
   PORT?: string;
+  API_PREFIX?: string;
 }
 
 export function loadEnv(): Env {

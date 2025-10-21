@@ -6,6 +6,7 @@ import { healthRoutes } from './routes/health';
 import { phaseRoutes } from './routes/phase';
 import { childrenRoutes } from './routes/children';
 import { checklistRoutes } from './routes/checklist';
+import { adminRoutes } from './routes/admin';
 
 async function start() {
   const env = loadEnv();
@@ -20,11 +21,15 @@ async function start() {
       return cb(new Error('Origin not allowed'), false);
     },
   });
+
+  const prefix = env.API_PREFIX || '/api/v1';
+
   await app.register(rateLimit, { max: 100, timeWindow: '1 minute' });
-  await app.register(healthRoutes, { prefix: '/api/v1' });
-  await app.register(phaseRoutes, { prefix: '/api/v1' });
-  await app.register(childrenRoutes, { prefix: '/api/v1' });
-  await app.register(checklistRoutes, { prefix: '/api/v1' });
+  await app.register(healthRoutes, { prefix });
+  await app.register(phaseRoutes, { prefix });
+  await app.register(childrenRoutes, { prefix });
+  await app.register(checklistRoutes, { prefix });
+  await app.register(adminRoutes, { prefix });
   const port = Number(env.PORT || 3000);
   await app.listen({ port, host: '0.0.0.0' });
 }

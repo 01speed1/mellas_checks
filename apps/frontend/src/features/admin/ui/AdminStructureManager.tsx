@@ -1,7 +1,7 @@
-// Copied from legacy root; relative imports converted to alias paths
 import React, { useEffect, useState, useCallback } from 'react';
 import { normalizeName } from '@/lib/name-normalize';
-import { Subject, Material, ScheduleTemplate, ScheduleBlock } from '@/db/types';
+import { Subject, Material, ScheduleBlock } from '@/db/types';
+import { TemplateDto } from '@/features/schedule/api/templates-service';
 import {
   listSubjects,
   createSubject,
@@ -29,7 +29,8 @@ import {
 } from '@/db/repositories/schedule-repository';
 
 interface AdminStructureManagerProps {
-  template: ScheduleTemplate | null;
+  template: TemplateDto | null;
+  templateId?: number;
 }
 
 export function AdminStructureManager(
@@ -256,23 +257,15 @@ export function AdminStructureManager(
   }
 
   if (!template)
-    return <div style={{ opacity: 0.7 }}>Select a template above to manage structure</div>;
+    return <div className="opacity-70">Select a template above to manage structure</div>;
 
   return (
-    <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
-      <div style={{ minWidth: 220 }}>
+    <div className="flex gap-8 flex-wrap">
+      <div className="min-w-[220px]">
         <h3>Subjects</h3>
-        <ul
-          style={{
-            padding: 0,
-            listStyle: 'none',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-          }}
-        >
+        <ul className="p-0 list-none flex flex-col gap-2">
           {subjects.map((s) => (
-            <li key={s.id} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <li key={s.id} className="flex gap-2 items-center">
               <span>{s.name}</span>
               <button onClick={() => onRenameSubject(s.id)}>Rename</button>
               <button onClick={() => onDeleteSubject(s.id)}>Delete</button>
@@ -289,19 +282,11 @@ export function AdminStructureManager(
           existingValues={subjects.map((s) => s.name)}
         />
       </div>
-      <div style={{ minWidth: 220 }}>
+      <div className="min-w-[220px]">
         <h3>Materials</h3>
-        <ul
-          style={{
-            padding: 0,
-            listStyle: 'none',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-          }}
-        >
+        <ul className="p-0 list-none flex flex-col gap-2">
           {materials.map((m) => (
-            <li key={m.id} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <li key={m.id} className="flex gap-2 items-center">
               <span>{m.name}</span>
               <button onClick={() => onRenameMaterial(m.id)}>Rename</button>
               <button onClick={() => onDeleteMaterial(m.id)}>Delete</button>
@@ -322,9 +307,9 @@ export function AdminStructureManager(
           materialsBySubject={materialsBySubject}
         />
       </div>
-      <div style={{ flex: 1, minWidth: 280 }}>
+      <div className="flex-1 min-w-[280px]">
         <h3>Blocks</h3>
-        <ol style={{ paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <ol className="pl-4 flex flex-col gap-1">
           {blocks
             .sort((a: any, b: any) => a.blockOrder - b.blockOrder)
             .map((b) => {
@@ -332,7 +317,7 @@ export function AdminStructureManager(
               return (
                 <li
                   key={b.id}
-                  style={{ display: 'flex', gap: 12, alignItems: 'center', cursor: 'move' }}
+                  className="flex gap-3 items-center cursor-move"
                   draggable
                   onDragStart={(e) => {
                     e.dataTransfer.setData('text/plain', String(b.id));
@@ -345,9 +330,9 @@ export function AdminStructureManager(
                     onReorderDrag(sourceId, b.id);
                   }}
                 >
-                  <span style={{ width: 28 }}>{(b as any).blockOrder}</span>
+                  <span className="w-7">{(b as any).blockOrder}</span>
                   <span>{subj ? subj.name : 'Unknown'}</span>
-                  <span style={{ fontSize: 11, opacity: 0.7 }}>
+                  <span className="text-[11px] opacity-70">
                     {(materialsBySubject[(b as any).subjectId] || [])
                       .map((m) => m.materialName)
                       .join(', ') || 'No materials'}
@@ -381,7 +366,7 @@ function InlineForm(props: {
         props.onSubmit(value.trim());
         setValue('');
       }}
-      style={{ display: 'flex', gap: 6, marginTop: 8 }}
+      className="flex gap-1.5 mt-2"
     >
       <input
         disabled={props.disabled}
@@ -392,7 +377,7 @@ function InlineForm(props: {
       <button disabled={props.disabled || !value.trim() || duplicate} type="submit">
         Add
       </button>
-      {duplicate && <span style={{ color: 'red', fontSize: 12 }}>Name exists</span>}
+      {duplicate && <span className="text-red-500 text-xs">Name exists</span>}
     </form>
   );
 }
@@ -407,8 +392,8 @@ function MaterialLinker(props: {
   const [subjectId, setSubjectId] = useState<number | null>(null);
   const [materialId, setMaterialId] = useState<number | null>(null);
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+    <div className="flex flex-col gap-2 mt-4">
+      <div className="flex gap-2 items-center">
         <select
           value={subjectId ?? ''}
           onChange={(e) => setSubjectId(Number(e.target.value) || null)}
@@ -444,7 +429,7 @@ function MaterialLinker(props: {
           Unlink
         </button>
       </div>
-      <div style={{ fontSize: 12, opacity: 0.7 }}>
+      <div className="text-xs opacity-70">
         {subjectId &&
           (props.materialsBySubject[subjectId]?.map((m) => m.materialName).join(', ') ||
             'No materials linked')}
