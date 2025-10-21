@@ -107,7 +107,14 @@ services:
 /* /index.html 200
 ```
 
-This configuration tells Render to serve `index.html` for all routes, enabling client-side routing for the SPA.
+However, Render Static Sites do not support `_redirects` files (this is a Netlify feature). Instead, the build process creates a `404.html` file identical to `index.html`. When a route is not found, Render serves `404.html`, which loads the React app and allows React Router to handle the routing client-side.
+
+The build script in `apps/frontend/package.json`:
+```json
+"build": "vite build && cp dist/index.html dist/404.html"
+```
+
+This configuration enables client-side routing for the SPA on Render.
 
 #### Backend (Web Service)
 
