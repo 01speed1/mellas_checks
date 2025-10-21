@@ -2,6 +2,9 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
 echo "📊 Render Deployment Status"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
@@ -10,6 +13,12 @@ if ! command -v render &> /dev/null; then
     echo "❌ Error: Render CLI is not installed"
     echo "Install it with: npm install -g render"
     exit 1
+fi
+
+if [ -f "$PROJECT_ROOT/.env.deploy" ]; then
+    source "$PROJECT_ROOT/.env.deploy"
+    echo "✅ Loaded configuration from .env.deploy"
+    echo ""
 fi
 
 if [ -z "$RENDER_FRONTEND_SERVICE_ID" ] || [ -z "$RENDER_BACKEND_SERVICE_ID" ]; then
@@ -37,21 +46,27 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "🎨 Frontend Service: $FRONTEND_ID"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-render services list --service="$FRONTEND_ID" 2>/dev/null || echo "⚠️  Could not fetch service info"
+render services get --service="$FRONTEND_ID" --output=yaml 2>/dev/null || echo "⚠️  Could not fetch service info"
 echo ""
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "🔨 Backend Service: $BACKEND_ID"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-render services list --service="$BACKEND_ID" 2>/dev/null || echo "⚠️  Could not fetch service info"
+render services get --service="$BACKEND_ID" --output=yaml 2>/dev/null || echo "⚠️  Could not fetch service info"
 echo ""
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "📋 Recent Deployments"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "View detailed deployment history at:"
-echo "  Frontend: https://dashboard.render.com/web/$FRONTEND_ID"
+echo "🎨 Frontend:"
+render deploys --service="$FRONTEND_ID" --limit=3 2>/dev/null || echo "⚠️  Could not fetch deploy info"
+echo ""
+echo "🔨 Backend:"
+render deploys --service="$BACKEND_ID" --limit=3 2>/dev/null || echo "⚠️  Could not fetch deploy info"
+echo ""
+echo "View full history at:"
+echo "  Frontend: https://dashboard.render.com/static/$FRONTEND_ID"
 echo "  Backend:  https://dashboard.render.com/web/$BACKEND_ID"
 echo ""
 

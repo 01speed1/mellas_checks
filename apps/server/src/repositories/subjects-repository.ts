@@ -1,5 +1,5 @@
-import { getDrizzle } from '../db/drizzle-client';
-import { subject } from '../db/schema';
+import { getDrizzle } from '../db/drizzle-client.js';
+import { subject } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 
 export interface SubjectRow {

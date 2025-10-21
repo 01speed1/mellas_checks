@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify'
-import { listChildren } from '../repositories/children-repository'
-import { listTemplatesByChild } from '../repositories/templates-repository'
+import { listChildren } from '../repositories/children-repository.js'
+import { listTemplatesByChild } from '../repositories/templates-repository.js'
 
 export async function childrenRoutes(app: FastifyInstance) {
   app.get('/children', async () => {

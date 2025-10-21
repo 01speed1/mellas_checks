@@ -1,7 +1,7 @@
-import { getChecklistInstance, listItemStates } from '../repositories/checklist-repository';
-import { listBlocks, getTemplate, getVersion } from '../repositories/schedule-repository';
-import { listTemplateSubjectMaterials } from '../repositories/template-materials-repository';
-import { getMaterialsByIds } from '../repositories/materials-repository';
+import { getChecklistInstance, listItemStates } from '../repositories/checklist-repository.js';
+import { listBlocks, getTemplate, getVersion } from '../repositories/schedule-repository.js';
+import { listTemplateSubjectMaterials } from '../repositories/template-materials-repository.js';
+import { getMaterialsByIds } from '../repositories/materials-repository.js';
 
 export async function loadChecklist(childId: number, targetDateIso: string) {
   const instance = await getChecklistInstance(childId, targetDateIso);

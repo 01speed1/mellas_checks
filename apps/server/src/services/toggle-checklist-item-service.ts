@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { getDrizzle } from '../db/drizzle-client';
-import { checklistItemState } from '../db/schema';
+import { getDrizzle } from '../db/drizzle-client.js';
+import { checklistItemState } from '../db/schema.js';
 
 export async function toggleChecklistItem(itemId: number, checked: boolean) {
   const db = getDrizzle();

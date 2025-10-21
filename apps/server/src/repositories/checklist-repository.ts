@@ -1,6 +1,6 @@
 import { eq, and } from 'drizzle-orm';
-import { getDrizzle } from '../db/drizzle-client';
-import { checklistInstance, checklistItemState } from '../db/schema';
+import { getDrizzle } from '../db/drizzle-client.js';
+import { checklistInstance, checklistItemState } from '../db/schema.js';
 
 export interface ChecklistInstanceRow {
   id: number;

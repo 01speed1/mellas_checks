@@ -1,6 +1,6 @@
 import { inArray, eq } from 'drizzle-orm';
-import { getDrizzle } from '../db/drizzle-client';
-import { material } from '../db/schema';
+import { getDrizzle } from '../db/drizzle-client.js';
+import { material } from '../db/schema.js';
 
 export interface MaterialRow {
   id: number;

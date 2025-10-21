@@ -5,16 +5,16 @@ import {
   listItemStates,
   bulkInsertMissingStates,
   ChecklistInstanceRow,
-} from '../repositories/checklist-repository';
+} from '../repositories/checklist-repository.js';
 import {
   getTemplate,
   getLatestVersionAtOrBefore,
   createVersion,
   cloneBlocks,
   listBlocks,
-} from '../repositories/schedule-repository';
-import { listTemplateSubjectMaterials } from '../repositories/template-materials-repository';
-import { getMaterialsByIds } from '../repositories/materials-repository';
+} from '../repositories/schedule-repository.js';
+import { listTemplateSubjectMaterials } from '../repositories/template-materials-repository.js';
+import { getMaterialsByIds } from '../repositories/materials-repository.js';
 
 export interface EnsureChecklistResultSubjectMaterial {
   checklistItemId: number;

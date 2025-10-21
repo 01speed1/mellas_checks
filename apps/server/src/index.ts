@@ -1,12 +1,12 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
-import { loadEnv } from './config/env';
-import { healthRoutes } from './routes/health';
-import { phaseRoutes } from './routes/phase';
-import { childrenRoutes } from './routes/children';
-import { checklistRoutes } from './routes/checklist';
-import { adminRoutes } from './routes/admin';
+import { loadEnv } from './config/env.js';
+import { healthRoutes } from './routes/health.js';
+import { phaseRoutes } from './routes/phase.js';
+import { childrenRoutes } from './routes/children.js';
+import { checklistRoutes } from './routes/checklist.js';
+import { adminRoutes } from './routes/admin.js';
 
 async function start() {
   const env = loadEnv();

@@ -1,6 +1,6 @@
 import { drizzle } from 'drizzle-orm/libsql';
-import { getDb } from './client';
-import * as schema from './schema';
+import { getDb } from './client.js';
+import * as schema from './schema.js';
 
 let drizzleSingleton: ReturnType<typeof drizzle> | undefined;
 

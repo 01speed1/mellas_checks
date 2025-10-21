@@ -1,4 +1,4 @@
-import { getChecklistInstance, listItemStates } from '../repositories/checklist-repository';
+import { getChecklistInstance, listItemStates } from '../repositories/checklist-repository.js';
 
 export async function summarizeChecklist(childId: number, targetDateIso: string) {
   const instance = await getChecklistInstance(childId, targetDateIso);

@@ -1,4 +1,4 @@
-import { ensureChecklist } from './checklist-service';
+import { ensureChecklist } from './checklist-service.js';
 
 export async function reselectTemplate(childId: number, templateId: number, targetDateIso: string) {
   return ensureChecklist(childId, templateId, targetDateIso);

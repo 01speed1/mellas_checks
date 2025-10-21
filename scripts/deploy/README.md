@@ -12,16 +12,17 @@ This directory contains shell scripts to automate deployment of the mellas_check
 
 This will:
 
-- Create both services on Render automatically
-- Extract and save Service IDs
+- Guide you to create both services on Render dashboard
+- Capture and save Service IDs in `.env.deploy`
 - Open browser to configure environment variables
 
 **Deploy after setup:**
 
 ```bash
-source .env.deploy
 ./scripts/deploy/deploy-all.sh
 ```
+
+**Note:** All scripts automatically load `.env.deploy`, no need to source it manually.
 
 ## Prerequisites
 
@@ -143,6 +144,19 @@ Deployment configuration is defined in `/render.yaml`:
 
 ## Monitoring Deployments
 
+### Quick Status Check
+
+```bash
+./scripts/deploy/status.sh
+```
+
+This will show:
+
+- Service information
+- Recent deployments
+- Links to dashboards
+- Commands to view logs
+
 ### Via Dashboard
 
 Visit https://dashboard.render.com and select your service to see:
@@ -158,11 +172,13 @@ Follow live logs:
 
 ```bash
 # Backend logs
-render logs --service=$RENDER_BACKEND_SERVICE_ID --follow
+render logs --service=srv-d3rggp95pdvs73fl9ml0 --follow
 
 # Frontend logs (static sites have minimal logs)
-render logs --service=$RENDER_FRONTEND_SERVICE_ID --follow
+render logs --service=srv-d3rghu49c44c73almaf0 --follow
 ```
+
+**Note:** Service IDs are automatically loaded from `.env.deploy`
 
 ## Troubleshooting
 
@@ -176,7 +192,13 @@ npm install -g render
 
 ### "Service ID not found"
 
-Make sure you've set the environment variables or passed them as arguments.
+Make sure `.env.deploy` exists and contains valid service IDs. If not, run `./scripts/deploy/setup.sh` again.
+
+Alternatively, you can pass service IDs as arguments:
+
+```bash
+./scripts/deploy/deploy-all.sh srv-frontend-id srv-backend-id
+```
 
 ### "Authentication failed"
 

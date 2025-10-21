@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm';
-import { getDrizzle } from '../db/drizzle-client';
-import { scheduleTemplate } from '../db/schema';
+import { getDrizzle } from '../db/drizzle-client.js';
+import { scheduleTemplate } from '../db/schema.js';
 
 export interface TemplateRow {
   id: string;

@@ -1,6 +1,6 @@
 import { and, eq, inArray } from 'drizzle-orm';
-import { getDrizzle } from '../db/drizzle-client';
-import { templateSubjectMaterial } from '../db/schema';
+import { getDrizzle } from '../db/drizzle-client.js';
+import { templateSubjectMaterial } from '../db/schema.js';
 
 export interface TemplateSubjectMaterialLinkRow {
   subjectId: number;

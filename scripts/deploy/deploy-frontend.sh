@@ -2,6 +2,9 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
 echo "🚀 Deploying Frontend to Render..."
 echo ""
 
@@ -9,6 +12,10 @@ if ! command -v render &> /dev/null; then
     echo "❌ Error: Render CLI is not installed"
     echo "Install it with: npm install -g render"
     exit 1
+fi
+
+if [ -f "$PROJECT_ROOT/.env.deploy" ]; then
+    source "$PROJECT_ROOT/.env.deploy"
 fi
 
 if [ -z "$RENDER_FRONTEND_SERVICE_ID" ]; then

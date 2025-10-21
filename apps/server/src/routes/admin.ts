@@ -4,25 +4,25 @@ import {
   createChild,
   updateChildName,
   deleteChildById,
-} from '../repositories/children-repository';
+} from '../repositories/children-repository.js';
 import {
   listTemplatesByChild,
   createTemplate as repoCreateTemplate,
   updateTemplateName,
   deleteTemplateById,
-} from '../repositories/templates-repository';
+} from '../repositories/templates-repository.js';
 import {
   listSubjects,
   createSubject as repoCreateSubject,
   updateSubjectName,
   deleteSubjectById,
-} from '../repositories/subjects-repository';
+} from '../repositories/subjects-repository.js';
 import {
   listMaterials,
   createMaterial as repoCreateMaterial,
   updateMaterialName,
   deleteMaterialById,
-} from '../repositories/materials-repository';
+} from '../repositories/materials-repository.js';
 
 export async function adminRoutes(app: FastifyInstance) {
   app.post('/admin/children', async (request) => {

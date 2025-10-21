@@ -1,11 +1,11 @@
 import { FastifyInstance } from 'fastify';
-import { ensureChecklist } from '../services/checklist-service';
-import { loadChecklist } from '../services/load-checklist-service';
-import { toggleChecklistItem } from '../services/toggle-checklist-item-service';
-import { reselectTemplate } from '../services/reselect-checklist-service';
-import { summarizeChecklist } from '../services/summary-checklist-service';
-import { loadEnv } from '../config/env';
-import { computePhase } from '../lib/time-phase';
+import { ensureChecklist } from '../services/checklist-service.js';
+import { loadChecklist } from '../services/load-checklist-service.js';
+import { toggleChecklistItem } from '../services/toggle-checklist-item-service.js';
+import { reselectTemplate } from '../services/reselect-checklist-service.js';
+import { summarizeChecklist } from '../services/summary-checklist-service.js';
+import { loadEnv } from '../config/env.js';
+import { computePhase } from '../lib/time-phase.js';
 
 export async function checklistRoutes(app: FastifyInstance) {
   app.post('/checklist/ensure', async (request, reply) => {

@@ -7,6 +7,7 @@ Este documento explica cómo crear servicios en Render para el proyecto mellas_c
 El Render CLI **no soporta creación automática de servicios**. Los servicios deben crearse manualmente a través del dashboard web.
 
 El CLI se usa principalmente para:
+
 - ✅ Ver logs
 - ✅ Gestionar deploys
 - ✅ Reiniciar servicios
@@ -21,6 +22,7 @@ El CLI se usa principalmente para:
 ```
 
 El script te guiará a través del proceso:
+
 1. Verifica que el CLI esté instalado y autenticado
 2. Te da instrucciones claras para crear los servicios
 3. Abre el dashboard de Render automáticamente
@@ -51,10 +53,12 @@ Ve a: https://dashboard.render.com
 1. Click en **"New +"** → **"Web Service"**
 
 2. **Conectar Repositorio:**
+
    - Selecciona tu repositorio: `01speed1/mellas_checks`
    - Si no aparece, conecta tu cuenta de GitHub primero
 
 3. **Configuración del Servicio:**
+
    ```
    Name:          mellas-checks-backend
    Environment:   Node
@@ -66,6 +70,7 @@ Ve a: https://dashboard.render.com
    ```
 
 4. **Environment Variables (agregar después):**
+
    - `TURSO_DATABASE_URL` - Tu URL de Turso
    - `TURSO_AUTH_TOKEN` - Tu token de Turso
    - `ALLOWED_ORIGIN` - URL de tu frontend
@@ -85,9 +90,11 @@ Ve a: https://dashboard.render.com
 1. Click en **"New +"** → **"Static Site"**
 
 2. **Conectar Repositorio:**
+
    - Selecciona tu repositorio: `01speed1/mellas_checks`
 
 3. **Configuración del Servicio:**
+
    ```
    Name:              mellas-checks-frontend
    Branch:            master
@@ -97,6 +104,7 @@ Ve a: https://dashboard.render.com
    ```
 
 4. **Environment Variables (agregar después):**
+
    - `VITE_API_BASE_URL` - URL de tu backend + `/api/v1`
      - Ejemplo: `https://mellas-checks-backend.onrender.com/api/v1`
 
@@ -131,6 +139,7 @@ nano .env.deploy  # Editar con tus IDs
 ### Paso 6: Configurar Environment Variables
 
 **Backend:**
+
 1. Ve a: `https://dashboard.render.com/web/srv-xxxxx`
 2. Click en **"Environment"** en el menú lateral
 3. Añade las variables:
@@ -142,6 +151,7 @@ nano .env.deploy  # Editar con tus IDs
    - `API_PREFIX` - `/api/v1`
 
 **Frontend:**
+
 1. Ve a: `https://dashboard.render.com/static/srv-yyyyy`
 2. Click en **"Environment"** en el menú lateral
 3. Añade:

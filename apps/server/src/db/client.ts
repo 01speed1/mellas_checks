@@ -1,5 +1,5 @@
 import { createClient } from '@libsql/client'
-import { loadEnv } from '../config/env'
+import { loadEnv } from '../config/env.js'
 
 let singleton: ReturnType<typeof createClient> | undefined
 

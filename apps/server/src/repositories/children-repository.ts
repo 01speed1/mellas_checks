@@ -1,6 +1,6 @@
 // Drizzle-based repository implementation
-import { getDrizzle } from '../db/drizzle-client';
-import { child } from '../db/schema';
+import { getDrizzle } from '../db/drizzle-client.js';
+import { child } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 
 export interface ChildRow {

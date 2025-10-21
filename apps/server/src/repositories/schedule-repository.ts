@@ -1,6 +1,6 @@
 import { desc, eq, and, lte } from 'drizzle-orm';
-import { getDrizzle } from '../db/drizzle-client';
-import { scheduleVersion, scheduleBlock, scheduleTemplate, subject } from '../db/schema';
+import { getDrizzle } from '../db/drizzle-client.js';
+import { scheduleVersion, scheduleBlock, scheduleTemplate, subject } from '../db/schema.js';
 
 export interface ScheduleVersionRow {
   id: number;
