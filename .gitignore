@@ -5,5 +5,8 @@ dist
 .vite
 coverage
 .env
+.env.deploy
+.env.local
+.env.*.local
 .DS_Store
 *.log

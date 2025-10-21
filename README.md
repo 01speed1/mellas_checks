@@ -170,6 +170,57 @@ pnpm --filter frontend typecheck # Type check frontend
 
 Future: merge per-subject requirements (one-off or recurring) into derived checklist. Not implemented yet.
 
+## Deployment
+
+This project is deployed on [Render](https://render.com) with two separate services:
+
+- **Frontend**: Static site serving the React application
+- **Backend**: Node.js web service running the Fastify API
+
+### Quick Start
+
+1. Install Render CLI:
+
+   ```bash
+   npm install -g render
+   ```
+
+2. Authenticate:
+
+   ```bash
+   render login
+   ```
+
+3. Run setup helper:
+
+   ```bash
+   ./scripts/deploy/setup.sh
+   ```
+
+4. Deploy:
+   ```bash
+   ./scripts/deploy/deploy-all.sh
+   ```
+
+### Detailed Instructions
+
+See:
+
+- [Deployment Documentation](.github/instructions/deployment.instructions.md) - Complete deployment guide
+- [Deployment Scripts README](scripts/deploy/README.md) - Script usage and configuration
+
+### Automated Deployments
+
+Render automatically deploys when pushing to `master`:
+
+```bash
+git push origin master
+```
+
+### Service Configuration
+
+Deployment configuration is defined in `render.yaml` at the project root.
+
 ```
 
 ```
