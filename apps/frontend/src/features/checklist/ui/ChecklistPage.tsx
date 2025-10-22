@@ -172,12 +172,12 @@ export function ChecklistPage(): React.ReactElement {
               {lexicalSubjects.map((subject) => {
                 const hasMaterials = subject.materials.length > 0;
                 const subjectId = subject.subjectId;
-                const allChecked = hasMaterials 
-                  ? subjectAggregate[subjectId]?.checked 
+                const allChecked = hasMaterials
+                  ? subjectAggregate[subjectId]?.checked
                   : subjectAggregate[subjectId]?.checked || false;
                 return (
-                  <Card 
-                    key={subjectId} 
+                  <Card
+                    key={subjectId}
                     className={`p-4 flex flex-col gap-3 press-ripple ${allChecked ? 'bg-green-500/20' : ''}`}
                   >
                     <div className="flex items-start gap-4">
@@ -214,8 +214,8 @@ export function ChecklistPage(): React.ReactElement {
                       <div className="mt-2 pl-8">
                         <ul className="flex flex-col gap-3 list-none m-0 p-0">
                           {subject.materials.map((material) => (
-                            <li 
-                              key={material.materialId} 
+                            <li
+                              key={material.materialId}
                               className={`flex items-center gap-3 p-3 rounded ${material.checked ? 'bg-green-500/10' : ''}`}
                             >
                               <Checkbox

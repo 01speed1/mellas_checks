@@ -32,6 +32,7 @@ export function ScheduleSelector(): React.ReactElement {
     async function loadPhase() {
       try {
         const phaseData = await fetchCurrentPhase();
+        console.log({ phaseData });
         const result = purgeCycleState({ clearChild: false });
         if (!result.cleared && result.targetDateIso) {
           const storedTemplate = localStorage.getItem('activeTemplateId');
