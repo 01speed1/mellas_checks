@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { loadChecklistForChild, toggleChecklistItemState } from '../api/checklist-api-service';
+import type { Phase } from '../../schedule/api/phase-service';
 
 interface ChecklistMaterialItem {
   subjectId: number;
@@ -30,7 +31,7 @@ interface UseChecklistApiResult {
   refresh: () => Promise<void>;
   editable: boolean;
   templateName: string;
-  phase: string | null;
+  phase: Phase | null;
   instanceId: number | null;
   targetDateIso: string | null;
 }
@@ -42,7 +43,7 @@ export function useChecklistApi(childId: number | null): UseChecklistApiResult {
   const [editable, setEditable] = useState(false);
   const [subjects, setSubjects] = useState<ChecklistSubjectGroup[]>([]);
   const [templateName, setTemplateName] = useState('');
-  const [phase, setPhase] = useState<string | null>(null);
+  const [phase, setPhase] = useState<Phase | null>(null);
   const [instanceId, setInstanceId] = useState<number | null>(null);
   const [targetDateIso, setTargetDateIso] = useState<string | null>(null);
 
@@ -80,7 +81,7 @@ export function useChecklistApi(childId: number | null): UseChecklistApiResult {
       setEditable(response.editable);
       setTemplateName(response.template.name);
       setInstanceId(response.checklistInstanceId);
-      setPhase(response.phase);
+      setPhase(response.phase as Phase);
       setTargetDateIso(response.targetDateISO);
       try {
         localStorage.setItem('activeChecklistInstanceId', String(response.checklistInstanceId));

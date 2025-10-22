@@ -30,10 +30,11 @@ export function ChecklistPage(): React.ReactElement {
 
   const phaseLabel = useMemo(() => {
     if (!phase) return '';
-    if (phase === 'pre_window') return 'En espera (después de las 3:00 pm puedes preparar)';
-    if (phase === 'prep_window') return 'Ventana de preparación abierta';
+    if (phase === 'prep_afternoon') return 'Ventana de preparación abierta (tarde)';
+    if (phase === 'prep_early') return 'Ventana de preparación abierta (mañana temprano)';
     if (phase === 'locked') return 'Bloqueado (horario escolar)';
-    return 'Preparación de tarde abierta';
+    if (phase === 'next_cycle') return 'En espera (después de las 3:00 pm puedes preparar)';
+    return '';
   }, [phase]);
 
   const [subjectOnlyRevision, setSubjectOnlyRevision] = useState(0);

@@ -6,8 +6,8 @@ import {
   reselectChecklistTemplate,
 } from '../checklist/api/checklist-api-service';
 import { getTomorrowIso, getTodayIso, formatDateForDisplay } from '../../lib/date-iso';
-import { evaluateStoredCycle } from '../../lib/cycle-phase';
 import { purgeCycleState } from '../../lib/cycle-state';
+import { fetchCurrentPhase, type Phase } from './api/phase-service';
 
 import {
   Card,
@@ -23,25 +23,34 @@ export function ScheduleSelector(): React.ReactElement {
   const [templates, setTemplates] = useState<TemplateDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
-  const [phase, setPhase] = useState<string | null>(null);
+  const [phase, setPhase] = useState<Phase | null>(null);
   const [activeTemplateId, setActiveTemplateId] = useState<number | null>(null);
   const [targetDateIso, setTargetDateIso] = useState<string | null>(null);
   const [activeChildId, setActiveChildId] = useState<number | null>(null);
 
   useEffect(() => {
-    const result = purgeCycleState({ clearChild: false });
-    if (!result.cleared && result.targetDateIso) {
-      const storedTemplate = localStorage.getItem('activeTemplateId');
-      if (storedTemplate) {
-        setActiveTemplateId(Number(storedTemplate));
-        setTargetDateIso(result.targetDateIso);
-        setPhase(result.phase);
+    async function loadPhase() {
+      try {
+        const phaseData = await fetchCurrentPhase();
+        const result = purgeCycleState({ clearChild: false });
+        if (!result.cleared && result.targetDateIso) {
+          const storedTemplate = localStorage.getItem('activeTemplateId');
+          if (storedTemplate) {
+            setActiveTemplateId(Number(storedTemplate));
+            setTargetDateIso(result.targetDateIso);
+            setPhase(phaseData.phase);
+          }
+        } else {
+          setActiveTemplateId(null);
+          setTargetDateIso(null);
+          setPhase(null);
+        }
+      } catch (error) {
+        console.error('Error loading phase', error);
+        setPhase(null);
       }
-    } else {
-      setActiveTemplateId(null);
-      setTargetDateIso(null);
-      setPhase(null);
     }
+    loadPhase();
   }, []);
 
   useEffect(() => {
@@ -100,16 +109,11 @@ export function ScheduleSelector(): React.ReactElement {
       localStorage.removeItem('activeTemplateId');
       localStorage.removeItem('activeTargetDate');
     }
-    const tomorrowIso = getTomorrowIso();
-    const evalResult = evaluateStoredCycle(tomorrowIso);
     const previousTemplate = localStorage.getItem('activeTemplateId');
     try {
+      const phaseData = await fetchCurrentPhase();
       let response;
-      if (
-        previousTemplate &&
-        Number(previousTemplate) !== templateId &&
-        evalResult.phase === 'prep_window'
-      ) {
+      if (previousTemplate && Number(previousTemplate) !== templateId && phaseData.editable) {
         response = await reselectChecklistTemplate(childId, templateId);
       } else {
         response = await ensureChecklistForTemplate(childId, templateId);
@@ -119,7 +123,7 @@ export function ScheduleSelector(): React.ReactElement {
       localStorage.setItem('activeTargetDate', targetDateOnly);
       setActiveTemplateId(templateId);
       setTargetDateIso(targetDateOnly);
-      setPhase(response.phase);
+      setPhase(phaseData.phase);
       navigate('/checklist');
     } catch (error) {
       console.error('Error selecting template', error);
@@ -134,11 +138,11 @@ export function ScheduleSelector(): React.ReactElement {
 
   const phaseLabel = useMemo(() => {
     if (!phase) return '';
-    if (phase === 'pre_window')
-      return 'Esperando, aun estas en clase! (después de las 3:00 pm se abre)';
-    if (phase === 'prep_window') return 'Puedes hacer checklist!';
-    if (phase === 'locked') return 'Bloqueado ';
-    if (phase === 'afternoon_next') return 'Nuevo ciclo abierto';
+    if (phase === 'prep_afternoon') return 'Puedes preparar tu checklist para mañana! (tarde)';
+    if (phase === 'prep_early') return 'Puedes preparar tu checklist! (mañana temprano)';
+    if (phase === 'locked') return 'Bloqueado - Estás en la escuela';
+    if (phase === 'next_cycle')
+      return 'Esperando - Aún estás en clase (después de las 3:00 pm se abre)';
     return '';
   }, [phase]);
 

@@ -165,23 +165,20 @@ export async function adminRoutes(app: FastifyInstance) {
     return { success: true };
   });
 
-  app.delete(
-    '/admin/templates/:templateId/materials/:subjectId/:materialId',
-    async (request) => {
-      const { templateId, subjectId, materialId } = request.params as {
-        templateId: string;
-        subjectId: string;
-        materialId: string;
-      };
-      const { detachMaterialFromTemplateSubject } = await import(
-        '../repositories/template-materials-repository.js'
-      );
-      await detachMaterialFromTemplateSubject(
-        Number(templateId),
-        Number(subjectId),
-        Number(materialId)
-      );
-      return { success: true };
-    }
-  );
+  app.delete('/admin/templates/:templateId/materials/:subjectId/:materialId', async (request) => {
+    const { templateId, subjectId, materialId } = request.params as {
+      templateId: string;
+      subjectId: string;
+      materialId: string;
+    };
+    const { detachMaterialFromTemplateSubject } = await import(
+      '../repositories/template-materials-repository.js'
+    );
+    await detachMaterialFromTemplateSubject(
+      Number(templateId),
+      Number(subjectId),
+      Number(materialId)
+    );
+    return { success: true };
+  });
 }
