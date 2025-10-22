@@ -27,3 +27,32 @@ export async function listTemplateSubjectMaterials(
     );
   return rows.map((r) => ({ subjectId: r.subjectId, materialId: r.materialId }));
 }
+
+export async function attachMaterialToTemplateSubject(
+  templateId: number,
+  subjectId: number,
+  materialId: number
+): Promise<void> {
+  const db = getDrizzle();
+  await db
+    .insert(templateSubjectMaterial)
+    .values({ templateId, subjectId, materialId })
+    .onConflictDoNothing();
+}
+
+export async function detachMaterialFromTemplateSubject(
+  templateId: number,
+  subjectId: number,
+  materialId: number
+): Promise<void> {
+  const db = getDrizzle();
+  await db
+    .delete(templateSubjectMaterial)
+    .where(
+      and(
+        eq(templateSubjectMaterial.templateId, templateId),
+        eq(templateSubjectMaterial.subjectId, subjectId),
+        eq(templateSubjectMaterial.materialId, materialId)
+      )
+    );
+}

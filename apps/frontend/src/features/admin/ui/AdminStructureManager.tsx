@@ -16,6 +16,8 @@ import {
   deleteMaterialApi,
   listBlocksForTemplateApi,
   listMaterialsForTemplateApi,
+  attachMaterialToTemplateSubjectApi,
+  detachMaterialFromTemplateSubjectApi,
 } from '../api/admin-api-service';
 
 interface AdminStructureManagerProps {
@@ -152,12 +154,31 @@ export function AdminStructureManager(
     }
   }
   async function onAttach(subjectId: number, materialId: number) {
-    alert('Feature not implemented yet: attach material to subject');
-    loadCore();
+    if (!template) return;
+    const existing = materialsBySubject[subjectId] || [];
+    const matName = materials.find((m) => m.id === materialId)?.name || '';
+    setMaterialsBySubject({
+      ...materialsBySubject,
+      [subjectId]: [...existing, { materialId, materialName: matName }],
+    });
+    try {
+      await attachMaterialToTemplateSubjectApi(Number(template.id), subjectId, materialId);
+    } finally {
+      loadCore();
+    }
   }
   async function onDetach(subjectId: number, materialId: number) {
-    alert('Feature not implemented yet: detach material from subject');
-    loadCore();
+    if (!template) return;
+    const existing = materialsBySubject[subjectId] || [];
+    setMaterialsBySubject({
+      ...materialsBySubject,
+      [subjectId]: existing.filter((m) => m.materialId !== materialId),
+    });
+    try {
+      await detachMaterialFromTemplateSubjectApi(Number(template.id), subjectId, materialId);
+    } finally {
+      loadCore();
+    }
   }
   async function onAddBlock(subjectId: number) {
     alert('Feature not implemented yet: add block');

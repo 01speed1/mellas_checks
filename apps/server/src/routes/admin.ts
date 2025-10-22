@@ -154,4 +154,34 @@ export async function adminRoutes(app: FastifyInstance) {
     });
     return { materials: result };
   });
+
+  app.post('/admin/templates/:templateId/materials', async (request) => {
+    const { templateId } = request.params as { templateId: string };
+    const { subjectId, materialId } = request.body as { subjectId: number; materialId: number };
+    const { attachMaterialToTemplateSubject } = await import(
+      '../repositories/template-materials-repository.js'
+    );
+    await attachMaterialToTemplateSubject(Number(templateId), subjectId, materialId);
+    return { success: true };
+  });
+
+  app.delete(
+    '/admin/templates/:templateId/materials/:subjectId/:materialId',
+    async (request) => {
+      const { templateId, subjectId, materialId } = request.params as {
+        templateId: string;
+        subjectId: string;
+        materialId: string;
+      };
+      const { detachMaterialFromTemplateSubject } = await import(
+        '../repositories/template-materials-repository.js'
+      );
+      await detachMaterialFromTemplateSubject(
+        Number(templateId),
+        Number(subjectId),
+        Number(materialId)
+      );
+      return { success: true };
+    }
+  );
 }

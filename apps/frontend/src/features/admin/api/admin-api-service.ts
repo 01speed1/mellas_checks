@@ -113,3 +113,24 @@ export async function listMaterialsForTemplateApi(
   );
   return response.materials;
 }
+
+export async function attachMaterialToTemplateSubjectApi(
+  templateId: number,
+  subjectId: number,
+  materialId: number
+): Promise<{ success: boolean }> {
+  return apiRequest<{ success: boolean }>(`/admin/templates/${templateId}/materials`, 'POST', {
+    body: { subjectId, materialId },
+  });
+}
+
+export async function detachMaterialFromTemplateSubjectApi(
+  templateId: number,
+  subjectId: number,
+  materialId: number
+): Promise<{ success: boolean }> {
+  return apiRequest<{ success: boolean }>(
+    `/admin/templates/${templateId}/materials/${subjectId}/${materialId}`,
+    'DELETE'
+  );
+}
