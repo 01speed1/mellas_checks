@@ -111,4 +111,47 @@ export async function adminRoutes(app: FastifyInstance) {
     await deleteMaterialById(Number(materialId));
     return { success: true };
   });
+
+  app.get('/admin/templates/:templateId/blocks', async (request) => {
+    const { templateId } = request.params as { templateId: string };
+    const { getLatestVersionAtOrBefore, listBlocks } = await import(
+      '../repositories/schedule-repository.js'
+    );
+    const version = await getLatestVersionAtOrBefore(Number(templateId), new Date().toISOString());
+    if (!version) {
+      return { blocks: [], versionId: null };
+    }
+    const blocks = await listBlocks(version.id);
+    return { blocks, versionId: version.id };
+  });
+
+  app.get('/admin/templates/:templateId/materials', async (request) => {
+    const { templateId } = request.params as { templateId: string };
+    const { listTemplateSubjectMaterials } = await import(
+      '../repositories/template-materials-repository.js'
+    );
+    const { getLatestVersionAtOrBefore, listBlocks } = await import(
+      '../repositories/schedule-repository.js'
+    );
+    const version = await getLatestVersionAtOrBefore(Number(templateId), new Date().toISOString());
+    if (!version) {
+      return { materials: [] };
+    }
+    const blocks = await listBlocks(version.id);
+    const subjectIds = blocks.map((b) => b.subjectId);
+    if (subjectIds.length === 0) {
+      return { materials: [] };
+    }
+    const links = await listTemplateSubjectMaterials(Number(templateId), subjectIds);
+    const allMaterials = await listMaterials();
+    const result = links.map((link) => {
+      const material = allMaterials.find((m) => m.id === link.materialId);
+      return {
+        subjectId: link.subjectId,
+        materialId: link.materialId,
+        materialName: material?.name || '',
+      };
+    });
+    return { materials: result };
+  });
 }

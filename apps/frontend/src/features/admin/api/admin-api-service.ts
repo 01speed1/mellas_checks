@@ -80,3 +80,36 @@ export async function updateMaterialApi(materialId: number, name: string): Promi
 export async function deleteMaterialApi(materialId: number): Promise<{ success: boolean }> {
   return apiRequest<{ success: boolean }>(`/admin/materials/${materialId}`, 'DELETE');
 }
+
+export interface BlockDto {
+  id: number;
+  versionId: number;
+  blockOrder: number;
+  subjectId: number;
+  subjectName: string;
+}
+
+export interface TemplateMaterialDto {
+  subjectId: number;
+  materialId: number;
+  materialName: string;
+}
+
+export async function listBlocksForTemplateApi(
+  templateId: number
+): Promise<{ blocks: BlockDto[]; versionId: number | null }> {
+  return apiRequest<{ blocks: BlockDto[]; versionId: number | null }>(
+    `/admin/templates/${templateId}/blocks`,
+    'GET'
+  );
+}
+
+export async function listMaterialsForTemplateApi(
+  templateId: number
+): Promise<TemplateMaterialDto[]> {
+  const response = await apiRequest<{ materials: TemplateMaterialDto[] }>(
+    `/admin/templates/${templateId}/materials`,
+    'GET'
+  );
+  return response.materials;
+}

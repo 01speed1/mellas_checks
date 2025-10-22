@@ -1,32 +1,22 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { normalizeName } from '@/lib/name-normalize';
-import { Subject, Material, ScheduleBlock } from '@/db/types';
 import { TemplateDto } from '@/features/schedule/api/templates-service';
 import {
-  listSubjects,
-  createSubject,
-  renameSubject,
-  deleteSubject,
-} from '@/db/repositories/subject-repository';
-import {
-  listTemplateSubjectMaterials,
-  attachMaterialToTemplateSubject,
-  detachMaterialFromTemplateSubject,
-  listMaterialsForTemplate,
-} from '@/db/repositories/template-material-repository';
-import {
-  listMaterials,
-  createMaterial,
-  renameMaterial,
-  deleteMaterial,
-} from '@/db/repositories/material-repository';
-import {
-  listBlocksForVersion,
-  createScheduleBlock,
-  deleteScheduleBlock,
-  reorderScheduleBlock,
-  getLatestScheduleVersion,
-} from '@/db/repositories/schedule-repository';
+  SubjectDto,
+  MaterialDto,
+  BlockDto,
+  TemplateMaterialDto,
+  listSubjectsApi,
+  createSubjectApi,
+  updateSubjectApi,
+  deleteSubjectApi,
+  listMaterialsApi,
+  createMaterialApi,
+  updateMaterialApi,
+  deleteMaterialApi,
+  listBlocksForTemplateApi,
+  listMaterialsForTemplateApi,
+} from '../api/admin-api-service';
 
 interface AdminStructureManagerProps {
   template: TemplateDto | null;
@@ -37,9 +27,9 @@ export function AdminStructureManager(
   props: AdminStructureManagerProps
 ): React.ReactElement | null {
   const { template } = props;
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [materials, setMaterials] = useState<Material[]>([]);
-  const [blocks, setBlocks] = useState<ScheduleBlock[]>([] as any);
+  const [subjects, setSubjects] = useState<SubjectDto[]>([]);
+  const [materials, setMaterials] = useState<MaterialDto[]>([]);
+  const [blocks, setBlocks] = useState<BlockDto[]>([]);
   const [versionId, setVersionId] = useState<number | null>(null);
   const [materialsBySubject, setMaterialsBySubject] = useState<
     Record<number, Array<{ materialId: number; materialName: string }>>
@@ -50,27 +40,22 @@ export function AdminStructureManager(
     setLoading(true);
     try {
       const [subjectsResult, materialsResult] = await Promise.all([
-        listSubjects(),
-        listMaterials(),
+        listSubjectsApi(),
+        listMaterialsApi(),
       ]);
-      setSubjects(subjectsResult as any);
-      setMaterials(materialsResult as any);
+      setSubjects(subjectsResult);
+      setMaterials(materialsResult);
       if (template) {
-        const version = await getLatestScheduleVersion(template.id);
-        if (!version) {
-          setVersionId(null);
-          setBlocks([]);
+        const blocksResponse = await listBlocksForTemplateApi(Number(template.id));
+        setVersionId(blocksResponse.versionId);
+        setBlocks(blocksResponse.blocks);
+        if (blocksResponse.blocks.length === 0) {
           setMaterialsBySubject({});
           return;
         }
-        setVersionId(version.id);
-        const blockRows = await listBlocksForVersion(version.id);
-        setBlocks(blockRows as any);
-        const subjectIds = new Set((blockRows as any).map((b: any) => b.subjectId));
-        const allMaterials = await listMaterialsForTemplate(template.id);
+        const allMaterials = await listMaterialsForTemplateApi(Number(template.id));
         const mapping: Record<number, Array<{ materialId: number; materialName: string }>> = {};
-        for (const row of allMaterials as any) {
-          if (!subjectIds.has(row.subjectId)) continue;
+        for (const row of allMaterials) {
           if (!mapping[row.subjectId]) mapping[row.subjectId] = [];
           mapping[row.subjectId].push({
             materialId: row.materialId,
@@ -94,22 +79,20 @@ export function AdminStructureManager(
 
   async function addSubject(name: string) {
     if (subjects.some((s) => normalizeName(s.name) === normalizeName(name))) return;
-    const nowIso = new Date().toISOString();
     const tempId = Date.now();
-    setSubjects([...subjects, { id: tempId as any, name, createdAt: nowIso, updatedAt: nowIso }]);
+    setSubjects([...subjects, { id: tempId, name }]);
     try {
-      await createSubject({ name });
+      await createSubjectApi(name);
     } finally {
       loadCore();
     }
   }
   async function addMaterial(name: string) {
     if (materials.some((m) => normalizeName(m.name) === normalizeName(name))) return;
-    const nowIso = new Date().toISOString();
     const tempId = Date.now();
-    setMaterials([...materials, { id: tempId as any, name, createdAt: nowIso, updatedAt: nowIso }]);
+    setMaterials([...materials, { id: tempId, name }]);
     try {
-      await createMaterial({ name });
+      await createMaterialApi(name);
     } finally {
       loadCore();
     }
@@ -124,7 +107,7 @@ export function AdminStructureManager(
       const previous = subjects;
       setSubjects(previous.map((s) => (s.id === id ? { ...s, name: newName.trim() } : s)));
       try {
-        await renameSubject(id, newName.trim());
+        await updateSubjectApi(id, newName.trim());
       } finally {
         loadCore();
       }
@@ -135,7 +118,7 @@ export function AdminStructureManager(
       const previous = subjects;
       setSubjects(previous.filter((s) => s.id !== id));
       try {
-        await deleteSubject(id);
+        await deleteSubjectApi(id);
       } finally {
         loadCore();
       }
@@ -151,7 +134,7 @@ export function AdminStructureManager(
       const previous = materials;
       setMaterials(previous.map((m) => (m.id === id ? { ...m, name: newName.trim() } : m)));
       try {
-        await renameMaterial(id, newName.trim());
+        await updateMaterialApi(id, newName.trim());
       } finally {
         loadCore();
       }
@@ -162,98 +145,31 @@ export function AdminStructureManager(
       const previous = materials;
       setMaterials(previous.filter((m) => m.id !== id));
       try {
-        await deleteMaterial(id);
+        await deleteMaterialApi(id);
       } finally {
         loadCore();
       }
     }
   }
   async function onAttach(subjectId: number, materialId: number) {
-    const existing = materialsBySubject[subjectId] || [];
-    const matName = materials.find((m) => m.id === materialId)?.name || '';
-    setMaterialsBySubject({
-      ...materialsBySubject,
-      [subjectId]: [...existing, { materialId, materialName: matName }],
-    });
-    try {
-      if (template) await attachMaterialToTemplateSubject(template.id, subjectId, materialId);
-    } finally {
-      if (template) {
-        const mats = await listTemplateSubjectMaterials(template.id, subjectId);
-        setMaterialsBySubject({ ...materialsBySubject, [subjectId]: mats as any });
-      }
-    }
+    alert('Feature not implemented yet: attach material to subject');
+    loadCore();
   }
   async function onDetach(subjectId: number, materialId: number) {
-    const existing = materialsBySubject[subjectId] || [];
-    setMaterialsBySubject({
-      ...materialsBySubject,
-      [subjectId]: existing.filter((m) => m.materialId !== materialId),
-    });
-    try {
-      if (template) await detachMaterialFromTemplateSubject(template.id, subjectId, materialId);
-    } finally {
-      if (template) {
-        const mats = await listTemplateSubjectMaterials(template.id, subjectId);
-        setMaterialsBySubject({ ...materialsBySubject, [subjectId]: mats as any });
-      }
-    }
+    alert('Feature not implemented yet: detach material from subject');
+    loadCore();
   }
   async function onAddBlock(subjectId: number) {
-    if (!versionId) return;
-    const order = blocks.length + 1;
-    const tempId = Date.now();
-    setBlocks([
-      ...blocks,
-      {
-        id: tempId as any,
-        versionId,
-        subjectId,
-        blockOrder: order,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      } as any,
-    ]);
-    try {
-      await createScheduleBlock({ versionId, subjectId, blockOrder: order });
-    } finally {
-      loadCore();
-    }
+    alert('Feature not implemented yet: add block');
+    loadCore();
   }
   async function onDeleteBlock(blockId: number) {
-    if (!versionId) return;
-    if (confirm('Delete block?')) {
-      setBlocks(blocks.filter((b) => b.id !== blockId));
-      try {
-        await deleteScheduleBlock(blockId);
-      } finally {
-        loadCore();
-      }
-    }
+    alert('Feature not implemented yet: delete block');
+    loadCore();
   }
   function onReorderDrag(sourceId: number, targetId: number) {
-    if (!versionId) return;
-    const sourceBlock = blocks.find((b) => b.id === sourceId);
-    const targetBlock = blocks.find((b) => b.id === targetId);
-    if (!sourceBlock || !targetBlock) return;
-    const sourceOrder = (sourceBlock as any).blockOrder;
-    const targetOrder = (targetBlock as any).blockOrder;
-    const updated = blocks.map((b) => {
-      const order = (b as any).blockOrder;
-      if (b.id === sourceId) return { ...b, blockOrder: targetOrder } as any;
-      if (sourceOrder < targetOrder) {
-        if (order > sourceOrder && order <= targetOrder)
-          return { ...b, blockOrder: order - 1 } as any;
-      } else if (sourceOrder > targetOrder) {
-        if (order < sourceOrder && order >= targetOrder)
-          return { ...b, blockOrder: order + 1 } as any;
-      }
-      return b as any;
-    });
-    setBlocks(updated as any);
-    Promise.all(
-      updated.map((b) => reorderScheduleBlock({ blockId: b.id, newOrder: (b as any).blockOrder }))
-    );
+    alert('Feature not implemented yet: reorder blocks');
+    loadCore();
   }
 
   if (!template)
@@ -383,8 +299,8 @@ function InlineForm(props: {
 }
 
 function MaterialLinker(props: {
-  subjects: Subject[];
-  materials: Material[];
+  subjects: SubjectDto[];
+  materials: MaterialDto[];
   onLink: (subjectId: number, materialId: number) => void;
   onUnlink: (subjectId: number, materialId: number) => void;
   materialsBySubject: Record<number, Array<{ materialId: number; materialName: string }>>;
